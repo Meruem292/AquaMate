@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-background",
+      "description": "A tranquil underwater scene of a fish farm.",
+      "imageUrl": "https://picsum.photos/seed/aquamate-hero/1200/800",
+      "imageHint": "fish farm"
+    }
+  ]
 }

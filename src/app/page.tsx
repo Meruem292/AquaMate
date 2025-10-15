@@ -92,10 +92,10 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-16 md:py-24 bg-card border-t">
+        <section className="py-16 md:py-24 bg-[hsl(var(--background-dark))] text-[hsl(var(--foreground-dark))] border-t border-border">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold">Ready to Dive In?</h2>
-            <p className="mt-4 text-muted-foreground md:text-lg max-w-2xl mx-auto">
+            <p className="mt-4 text-muted-foreground-dark md:text-lg max-w-2xl mx-auto">
               Join hundreds of successful fish farmers who trust AquaMate. Start your journey towards a more productive and sustainable farm today.
             </p>
             <Button size="lg" asChild className="mt-8 transition-transform duration-300 hover:scale-105">

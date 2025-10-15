@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useUser } from '@/lib/firebase/useUser';
 import { getDevice, getDeviceDataHistory } from '@/lib/firebase/firestore';
 import { Device, DeviceData } from '@/lib/validation/device';
@@ -30,10 +30,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 export default function DeviceDetailsPage({
-  params: { deviceId },
+  params,
 }: {
-  params: { deviceId: string };
+  params: Promise<{ deviceId: string }>;
 }) {
+  const { deviceId } = use(params);
   const { user, isLoading: userLoading } = useUser();
   const [device, setDevice] = useState<Device | null>(null);
   const [history, setHistory] = useState<DeviceData[]>([]);

@@ -50,7 +50,7 @@ export default function Home() {
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
               Smarter Aquaculture, Healthier Fish
             </h1>
-            <p className="mt-4 text-lg md:text-xl max-w-3xl mx-auto text-primary-foreground/90">
+            <p className="mt-4 text-lg md:text-xl max-w-3xl mx-auto text-white">
               AquaMate provides intelligent water monitoring and analytics to help you optimize your aquaculture operations and ensure the health of your aquatic life.
             </p>
             <Button size="lg" asChild className="mt-8 transition-transform duration-300 hover:scale-105">

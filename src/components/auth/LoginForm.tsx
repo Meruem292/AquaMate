@@ -56,11 +56,11 @@ export function LoginForm() {
     <Card className="max-w-md w-full mx-auto shadow-xl">
       <CardHeader className="text-center">
         <Link href="/" className="flex items-center justify-center gap-2 mb-4 text-foreground">
-          <Image src="/Aquamate.png" alt="AquaMate Logo" width={32} height={32} className="rounded-full" />
-          <CardTitle className="text-2xl font-bold">AquaMate</CardTitle>
+          <Image src="/Aquamate.png" alt="AquaMate Logo" width={48} height={48} className="rounded-full" />
         </Link>
+        <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
         <CardDescription>
-          Welcome back! Login to your account.
+          Login to your AquaMate account.
         </CardDescription>
       </CardHeader>
       <CardContent>

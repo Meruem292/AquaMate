@@ -6,6 +6,7 @@ import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CheckCircle, Gauge, LineChart, ShieldCheck } from 'lucide-react';
+import { TypingEffect } from '@/components/common/TypingEffect';
 
 const features = [
   {
@@ -32,6 +33,8 @@ const features = [
 
 export default function Home() {
 
+  const heroSubtitle = "AquaMate provides intelligent water monitoring and analytics to help you optimize your aquaculture operations and ensure the health of your aquatic life."
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -50,9 +53,11 @@ export default function Home() {
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
               Smarter Aquaculture, Healthier Fish
             </h1>
-            <p className="mt-4 text-lg md:text-xl max-w-3xl mx-auto text-white">
-              AquaMate provides intelligent water monitoring and analytics to help you optimize your aquaculture operations and ensure the health of your aquatic life.
-            </p>
+            <TypingEffect 
+              text={heroSubtitle}
+              speed={25}
+              className="mt-4 text-lg md:text-xl max-w-3xl mx-auto text-white h-24" 
+            />
             <Button size="lg" asChild className="mt-8 transition-transform duration-300 hover:scale-105">
               <Link href="/signup">Get Started for Free</Link>
             </Button>

@@ -30,12 +30,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 export default function DeviceDetailsPage({
-  params,
+  params: { deviceId },
 }: {
   params: { deviceId: string };
 }) {
   const { user, isLoading: userLoading } = useUser();
-  const { deviceId } = params;
   const [device, setDevice] = useState<Device | null>(null);
   const [history, setHistory] = useState<DeviceData[]>([]);
   const [isLoading, setIsLoading] = useState(true);

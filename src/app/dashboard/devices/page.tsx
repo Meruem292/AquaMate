@@ -28,7 +28,6 @@ import {
 import { Loader2, PlusCircle, Trash2, Edit } from 'lucide-react';
 import { Device, deviceSchema } from '@/lib/validation/device';
 import { useToast } from '@/hooks/use-toast';
-import DashboardLayout from '../layout';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -202,96 +201,94 @@ export default function DeviceManagementPage() {
   );
 
   return (
-    <DashboardLayout>
-      <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Device Management</h2>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openAddDialog}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Device
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingDevice ? 'Edit Device' : 'Add New Device'}
-                </DialogTitle>
-              </DialogHeader>
-              <DeviceForm
-                onSubmit={editingDevice ? handleEditDevice : handleAddDevice}
-                device={editingDevice}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
+    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Device Management</h2>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={openAddDialog}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Device
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingDevice ? 'Edit Device' : 'Add New Device'}
+              </DialogTitle>
+            </DialogHeader>
+            <DeviceForm
+              onSubmit={editingDevice ? handleEditDevice : handleAddDevice}
+              device={editingDevice}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Device ID</TableHead>
-                <TableHead>Device Name</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {devices.length > 0 ? (
-                devices.map((device) => (
-                  <TableRow key={device.id}>
-                    <TableCell>{device.id}</TableCell>
-                    <TableCell>{device.name}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEditDialog(device)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently
-                              delete the device.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteDevice(device.id)}
-                              className="bg-destructive hover:bg-destructive/90"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center">
-                    No devices found.
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Device ID</TableHead>
+              <TableHead>Device Name</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {devices.length > 0 ? (
+              devices.map((device) => (
+                <TableRow key={device.id}>
+                  <TableCell>{device.id}</TableCell>
+                  <TableCell>{device.name}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEditDialog(device)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently
+                            delete the device.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteDevice(device.id)}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </div>
-    </DashboardLayout>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">
+                  No devices found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      )}
+    </div>
   );
 }

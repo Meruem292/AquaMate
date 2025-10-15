@@ -10,6 +10,7 @@ import {
   query,
   orderByChild,
   limitToLast,
+  push,
 } from 'firebase/database';
 import { app } from './config';
 import { Device, DeviceData } from '../validation/device';
@@ -20,7 +21,7 @@ const getDevicesRef = (userId: string) => {
   return ref(db, `users/${userId}/devices`);
 };
 
-const getDeviceRef = (userId: string, deviceId: string) => {
+const getDeviceRef = (userId:string, deviceId: string) => {
   return ref(db, `users/${userId}/devices/${deviceId}`);
 };
 
@@ -30,24 +31,10 @@ const getDeviceDataRef = (deviceId: string) => {
 
 export const addDevice = async (userId: string, device: Device) => {
   const deviceRef = getDeviceRef(userId, device.id);
-  // Set default values for sensor data when adding a new device
-  const newDevice = {
-    ...device,
-    ph: 7,
-    temperature: 25,
-    ammonia: 0,
-  };
-  await set(deviceRef, newDevice);
+  await set(deviceRef, device);
 
-  // Also create an initial data entry for the device
-  const deviceDataRef = getDeviceDataRef(device.id);
-  const initialData = {
-    ph: 7,
-    temperature: 25,
-    ammonia: 0,
-    timestamp: Date.now(),
-  };
-  await set(ref(db, `devices/${device.id}/${Date.now()}`), initialData);
+  // Also create an initial data entry for the device with default values
+  addDummyDeviceData(device.id);
 };
 
 export const getDevices = (
@@ -103,4 +90,17 @@ export const onDeviceDataUpdate = (
     }
   });
   return unsubscribe;
+};
+
+// Function to add dummy data for a specific device
+export const addDummyDeviceData = async (deviceId: string) => {
+  const deviceDataRef = getDeviceDataRef(deviceId);
+  const newDataRef = push(deviceDataRef);
+  const dummyData = {
+    ph: parseFloat((6.0 + Math.random() * 2.0).toFixed(1)), // pH between 6.0 and 8.0
+    temperature: parseFloat((20.0 + Math.random() * 10.0).toFixed(1)), // Temp between 20.0 and 30.0
+    ammonia: parseFloat((Math.random() * 1.0).toFixed(2)), // Ammonia between 0.0 and 1.0
+    timestamp: Date.now(),
+  };
+  await set(newDataRef, dummyData);
 };

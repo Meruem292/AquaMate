@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { Droplets, LayoutDashboard, Router } from 'lucide-react';
+import { Droplets, LayoutDashboard, Router, TestTube } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -43,6 +43,14 @@ export default function DashboardLayout({
                 <Link href="/dashboard/devices">
                   <Router />
                   Device Management
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/dashboard/simulator">
+                  <TestTube />
+                  Data Simulator
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

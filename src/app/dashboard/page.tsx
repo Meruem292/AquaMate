@@ -7,8 +7,9 @@ import { getDevices, onDeviceDataUpdate } from '@/lib/firebase/firestore';
 import { Device, DeviceData } from '@/lib/validation/device';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-function DeviceCard({ device }: { device: Device }) {
+function DeviceCard({ device, index }: { device: Device; index: number }) {
   const [data, setData] = useState<DeviceData | null>(null);
 
   useEffect(() => {
@@ -17,10 +18,22 @@ function DeviceCard({ device }: { device: Device }) {
     });
     return () => unsubscribe();
   }, [device.id]);
+  
+  const cardColors = [
+    "bg-sky-900/30 hover:bg-sky-900/40 border-sky-700/50",
+    "bg-purple-900/30 hover:bg-purple-900/40 border-purple-700/50",
+    "bg-emerald-900/30 hover:bg-emerald-900/40 border-emerald-700/50",
+    "bg-rose-900/30 hover:bg-rose-900/40 border-rose-700/50",
+    "bg-indigo-900/30 hover:bg-indigo-900/40 border-indigo-700/50",
+    "bg-amber-900/30 hover:bg-amber-900/40 border-amber-700/50",
+  ]
+
+  const colorClass = cardColors[index % cardColors.length];
+
 
   return (
     <Link href={`/dashboard/devices/${device.id}`}>
-      <Card className="shadow-lg transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl">
+      <Card className={cn("shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl", colorClass)}>
         <CardHeader>
           <CardTitle className="text-xl">{device.name}</CardTitle>
           <p className="text-sm text-muted-foreground">ID: {device.id}</p>
@@ -94,8 +107,8 @@ export default function DashboardPage() {
       </h1>
       {devices.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {devices.map((device) => (
-            <DeviceCard key={device.id} device={device} />
+          {devices.map((device, index) => (
+            <DeviceCard key={device.id} device={device} index={index} />
           ))}
         </div>
       ) : (

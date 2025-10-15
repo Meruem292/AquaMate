@@ -21,7 +21,7 @@ const getDevicesRef = (userId: string) => {
   return ref(db, `users/${userId}/devices`);
 };
 
-const getDeviceRef = (userId:string, deviceId: string) => {
+const getDeviceRef = (userId: string, deviceId: string) => {
   return ref(db, `users/${userId}/devices/${deviceId}`);
 };
 
@@ -52,6 +52,23 @@ export const getDevices = (
       callback(devices);
     } else {
       callback([]);
+    }
+  });
+  return unsubscribe;
+};
+
+export const getDevice = (
+  userId: string,
+  deviceId: string,
+  callback: (device: Device | null) => void
+) => {
+  const deviceRef = getDeviceRef(userId, deviceId);
+  const unsubscribe = onValue(deviceRef, (snapshot) => {
+    const data = snapshot.val();
+    if(data) {
+      callback({ ...data, id: deviceId });
+    } else {
+      callback(null);
     }
   });
   return unsubscribe;
@@ -92,11 +109,30 @@ export const onDeviceDataUpdate = (
   return unsubscribe;
 };
 
+export const getDeviceDataHistory = (
+  deviceId: string,
+  callback: (data: DeviceData[]) => void
+) => {
+  const deviceDataRef = getDeviceDataRef(deviceId);
+  const historyQuery = query(deviceDataRef, orderByChild('timestamp'));
+
+  const unsubscribe = onValue(historyQuery, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const history = Object.values(data) as DeviceData[];
+      callback(history);
+    } else {
+      callback([]);
+    }
+  });
+  return unsubscribe;
+};
+
 // Function to add dummy data for a specific device
 export const addDummyDeviceData = async (deviceId: string) => {
   const deviceDataRef = getDeviceDataRef(deviceId);
   const newDataRef = push(deviceDataRef);
-  const dummyData = {
+  const dummyData: DeviceData = {
     ph: parseFloat((6.0 + Math.random() * 2.0).toFixed(1)), // pH between 6.0 and 8.0
     temperature: parseFloat((20.0 + Math.random() * 10.0).toFixed(1)), // Temp between 20.0 and 30.0
     ammonia: parseFloat((Math.random() * 1.0).toFixed(2)), // Ammonia between 0.0 and 1.0

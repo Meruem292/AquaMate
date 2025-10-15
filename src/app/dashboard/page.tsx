@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useUser } from '@/lib/firebase/useUser';
 import { getDevices, onDeviceDataUpdate } from '@/lib/firebase/firestore';
 import { Device, DeviceData } from '@/lib/validation/device';
@@ -18,32 +19,46 @@ function DeviceCard({ device }: { device: Device }) {
   }, [device.id]);
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-xl">{device.name}</CardTitle>
-        <p className="text-sm text-muted-foreground">ID: {device.id}</p>
-      </CardHeader>
-      <CardContent className="grid grid-cols-3 gap-4 text-center">
-        <div className="flex flex-col">
-          <span className="text-sm text-muted-foreground">pH Level</span>
-          <span className="text-2xl font-bold">
-            {data ? data.ph.toFixed(1) : <Loader2 className="h-6 w-6 animate-spin inline-block" />}
-          </span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-sm text-muted-foreground">Temperature</span>
-          <span className="text-2xl font-bold">
-            {data ? `${data.temperature.toFixed(1)}°C` : <Loader2 className="h-6 w-6 animate-spin inline-block" />}
-          </span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-sm text-muted-foreground">Ammonia</span>
-          <span className="text-2xl font-bold">
-            {data ? `${data.ammonia.toFixed(2)} ppm` : <Loader2 className="h-6 w-6 animate-spin inline-block" />}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
+    <Link href={`/dashboard/devices/${device.id}`}>
+      <Card className="shadow-lg transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-xl">{device.name}</CardTitle>
+          <p className="text-sm text-muted-foreground">ID: {device.id}</p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-3 gap-4 text-center">
+          <div className="flex flex-col">
+            <span className="text-sm text-muted-foreground">pH Level</span>
+            <span className="text-2xl font-bold">
+              {data ? (
+                data.ph.toFixed(1)
+              ) : (
+                <Loader2 className="h-6 w-6 animate-spin inline-block" />
+              )}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm text-muted-foreground">Temperature</span>
+            <span className="text-2xl font-bold">
+              {data ? (
+                `${data.temperature.toFixed(1)}°C`
+              ) : (
+                <Loader2 className="h-6 w-6 animate-spin inline-block" />
+              )}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm text-muted-foreground">Ammonia</span>
+            <span className="text-2xl font-bold">
+              {data ? (
+                `${data.ammonia.toFixed(2)} ppm`
+              ) : (
+                <Loader2 className="h-6 w-6 animate-spin inline-block" />
+              )}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
 

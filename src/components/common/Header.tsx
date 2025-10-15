@@ -12,8 +12,6 @@ export function Header() {
         </Link>
         <nav className="hidden md:flex items-center gap-6">
           <Link href="#features" className="text-sm font-medium text-white/80 hover:text-white transition-colors">Features</Link>
-          <Link href="#" className="text-sm font-medium text-white/80 hover:text-white transition-colors">Pricing</Link>
-          <Link href="#" className="text-sm font-medium text-white/80 hover:text-white transition-colors">Contact</Link>
         </nav>
         <nav className="flex items-center gap-2">
           <Button variant="ghost" asChild className="text-white hover:bg-white/10 hover:text-white">

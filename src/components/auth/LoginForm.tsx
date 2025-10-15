@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Mail, Lock, Droplets } from 'lucide-react';
+import { Loader2, Mail, Lock } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,7 +56,7 @@ export function LoginForm() {
     <Card className="max-w-md w-full mx-auto shadow-xl">
       <CardHeader className="text-center">
         <Link href="/" className="flex items-center justify-center gap-2 mb-4 text-foreground">
-          <Droplets className="h-8 w-8" />
+          <Image src="/Aquamate.png" alt="AquaMate Logo" width={32} height={32} />
           <CardTitle className="text-2xl font-bold">AquaMate</CardTitle>
         </Link>
         <CardDescription>

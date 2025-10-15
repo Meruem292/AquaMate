@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -12,7 +13,7 @@ import {
   SidebarMenuButton,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { Droplets, LayoutDashboard, Router, TestTube, User } from 'lucide-react';
+import { LayoutDashboard, Router, TestTube, User } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +33,7 @@ export default function DashboardLayout({
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
-            <Droplets className="h-6 w-6 text-primary" />
+            <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} />
             <span className="text-lg font-semibold">AquaMate</span>
           </div>
         </SidebarHeader>

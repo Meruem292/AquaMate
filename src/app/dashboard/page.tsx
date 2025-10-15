@@ -20,12 +20,12 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
   }, [device.id]);
   
   const cardColors = [
-    "bg-sky-900/30 hover:bg-sky-900/40 border-sky-700/50",
-    "bg-purple-900/30 hover:bg-purple-900/40 border-purple-700/50",
-    "bg-emerald-900/30 hover:bg-emerald-900/40 border-emerald-700/50",
-    "bg-rose-900/30 hover:bg-rose-900/40 border-rose-700/50",
-    "bg-indigo-900/30 hover:bg-indigo-900/40 border-indigo-700/50",
-    "bg-amber-900/30 hover:bg-amber-900/40 border-amber-700/50",
+    "bg-teal-900/20 hover:bg-teal-900/30 border-teal-700/40",
+    "bg-cyan-900/20 hover:bg-cyan-900/30 border-cyan-700/40",
+    "bg-sky-900/20 hover:bg-sky-900/30 border-sky-700/40",
+    "bg-blue-900/20 hover:bg-blue-900/30 border-blue-700/40",
+    "bg-indigo-900/20 hover:bg-indigo-900/30 border-indigo-700/40",
+    "bg-violet-900/20 hover:bg-violet-900/30 border-violet-700/40",
   ]
 
   const colorClass = cardColors[index % cardColors.length];

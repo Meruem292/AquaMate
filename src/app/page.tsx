@@ -50,7 +50,7 @@ export default function Home() {
           />
           <div className="absolute inset-0 bg-black/60" />
           <div className="relative z-10 px-4 max-w-4xl">
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight animate-swim">
               Smarter Aquaculture, Healthier Fish
             </h1>
             <TypingEffect 

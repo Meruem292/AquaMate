@@ -33,7 +33,7 @@ export default function DashboardLayout({
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
-            <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} />
+            <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} className="rounded-full" />
             <span className="text-lg font-semibold">AquaMate</span>
           </div>
         </SidebarHeader>

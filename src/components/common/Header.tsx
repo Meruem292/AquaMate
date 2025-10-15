@@ -7,7 +7,7 @@ export function Header() {
     <header className="py-4 px-4 sm:px-6 lg:px-8 bg-transparent absolute top-0 w-full z-10">
       <div className="container mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-white">
-          <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} />
+          <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} className="rounded-full" />
           <span className="text-xl font-bold">AquaMate</span>
         </Link>
         <nav className="hidden md:flex items-center gap-6">

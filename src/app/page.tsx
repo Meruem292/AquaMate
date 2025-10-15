@@ -31,7 +31,6 @@ const features = [
 ];
 
 export default function Home() {
-  const heroImage = PlaceHolderImages.find(img => img.id === 'hero-background');
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -39,16 +38,13 @@ export default function Home() {
       <main className="flex-grow">
         {/* Hero Section */}
         <section className="relative h-[60vh] md:h-[70vh] flex items-center justify-center text-center text-white">
-          {heroImage && (
-            <Image
-              src={heroImage.imageUrl}
-              alt={heroImage.description}
-              fill
-              className="object-cover"
-              priority
-              data-ai-hint={heroImage.imageHint}
-            />
-          )}
+          <Image
+            src="/Aquamate_bg.jpg"
+            alt="AquaMate hero background"
+            fill
+            className="object-cover"
+            priority
+          />
           <div className="absolute inset-0 bg-black/60" />
           <div className="relative z-10 px-4 max-w-4xl">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">

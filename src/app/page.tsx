@@ -49,12 +49,12 @@ export default function Home() {
               data-ai-hint={heroImage.imageHint}
             />
           )}
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="relative z-10 px-4 max-w-3xl">
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="relative z-10 px-4 max-w-4xl">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
               Smarter Aquaculture, Healthier Fish
             </h1>
-            <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto text-primary-foreground/90">
+            <p className="mt-4 text-lg md:text-xl max-w-3xl mx-auto text-primary-foreground/90">
               AquaMate provides intelligent water monitoring and analytics to help you optimize your aquaculture operations and ensure the health of your aquatic life.
             </p>
             <Button size="lg" asChild className="mt-8 transition-transform duration-300 hover:scale-105">
@@ -74,12 +74,12 @@ export default function Home() {
             </div>
             <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
               {features.map((feature) => (
-                <Card key={feature.title} className="text-center bg-card hover:shadow-lg transition-shadow duration-300">
+                <Card key={feature.title} className="text-center bg-card shadow-lg hover:shadow-xl transition-shadow duration-300 hover:-translate-y-1">
                   <CardHeader>
-                    <div className="mx-auto bg-primary/10 p-3 w-fit rounded-full">
+                    <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
                       {feature.icon}
                     </div>
-                    <CardTitle className="mt-4">{feature.title}</CardTitle>
+                    <CardTitle className="mt-4 !text-xl">{feature.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground">{feature.description}</p>
@@ -91,7 +91,7 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-16 md:py-24 bg-card">
+        <section className="py-16 md:py-24 bg-card border-t">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold">Ready to Dive In?</h2>
             <p className="mt-4 text-muted-foreground md:text-lg max-w-2xl mx-auto">

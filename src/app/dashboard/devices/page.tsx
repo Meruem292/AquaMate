@@ -9,6 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,7 +27,7 @@ import {
   getDevices,
   updateDevice,
 } from '@/lib/firebase/firestore';
-import { Loader2, PlusCircle, Trash2, Edit } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, MoreHorizontal } from 'lucide-react';
 import { Device, deviceSchema } from '@/lib/validation/device';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -39,6 +41,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+
 
 export default function DeviceManagementPage() {
   const { user, isLoading: userLoading } = useUser();
@@ -179,7 +190,7 @@ export default function DeviceManagementPage() {
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
     device: Device | null;
   }) => (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="grid gap-4 py-4">
       <Input
         name="deviceId"
         placeholder="Device ID"
@@ -193,10 +204,12 @@ export default function DeviceManagementPage() {
         defaultValue={device?.name || ''}
         required
       />
-      <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {device ? 'Save Changes' : 'Add Device'}
-      </Button>
+      <DialogFooter>
+        <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {device ? 'Save Changes' : 'Add Device'}
+        </Button>
+      </DialogFooter>
     </form>
   );
 
@@ -211,7 +224,10 @@ export default function DeviceManagementPage() {
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Device Management</h2>
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Device Management</h2>
+          <p className="text-muted-foreground">Manage your AquaMate monitoring devices.</p>
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={openAddDialog}>
@@ -223,6 +239,9 @@ export default function DeviceManagementPage() {
               <DialogTitle>
                 {editingDevice ? 'Edit Device' : 'Add New Device'}
               </DialogTitle>
+              <DialogDescription>
+                {editingDevice ? 'Update the details of your existing device.' : 'Add a new device to your account to start monitoring.'}
+              </DialogDescription>
             </DialogHeader>
             <DeviceForm
               onSubmit={editingDevice ? handleEditDevice : handleAddDevice}
@@ -232,65 +251,81 @@ export default function DeviceManagementPage() {
         </Dialog>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Device ID</TableHead>
-            <TableHead>Device Name</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {devices.length > 0 ? (
-            devices.map((device) => (
-              <TableRow key={device.id}>
-                <TableCell>{device.id}</TableCell>
-                <TableCell>{device.name}</TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openEditDialog(device)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently
-                          delete the device.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDeleteDevice(device.id)}
-                          className="bg-destructive hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </TableCell>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Device ID</TableHead>
+                <TableHead>Device Name</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={3} className="text-center">
-                No devices found.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            </TableHeader>
+            <TableBody>
+              {devices.length > 0 ? (
+                devices.map((device) => (
+                  <TableRow key={device.id}>
+                    <TableCell className="font-mono">{device.id}</TableCell>
+                    <TableCell className="font-medium">{device.name}</TableCell>
+                    <TableCell className="text-right">
+                       <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            aria-haspopup="true"
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onSelect={() => openEditDialog(device)}>
+                            <Edit className="mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Trash2 className="mr-2 text-destructive" /> 
+                                <span className="text-destructive">Delete</span>
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                             <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently
+                                  delete the device and all its data.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteDevice(device.id)}
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center h-24">
+                    No devices found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

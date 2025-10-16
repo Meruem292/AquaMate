@@ -24,7 +24,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -79,10 +79,13 @@ export default function DeviceDetailsPage({
     );
   }
 
-  const chartData = history.map((d) => ({
-    ...d,
-    timestamp: format(new Date(d.timestamp), 'MMM d, HH:mm'),
-  }));
+  const chartData = history.map((d) => {
+    const date = new Date(d.timestamp);
+    return {
+      ...d,
+      timestamp: isValid(date) ? format(date, 'MMM d, HH:mm') : 'Invalid Date',
+    }
+  });
 
   return (
     <main className="flex-grow p-4 md:p-8">
@@ -168,7 +171,7 @@ export default function DeviceDetailsPage({
                 [...history].reverse().map((data) => (
                   <TableRow key={data.timestamp}>
                     <TableCell>
-                      {format(new Date(data.timestamp), 'PPpp')}
+                      {isValid(new Date(data.timestamp)) ? format(new Date(data.timestamp), 'PPpp') : 'Invalid Date'}
                     </TableCell>
                     <TableCell>{data.ph.toFixed(1)}</TableCell>
                     <TableCell>{data.temperature.toFixed(1)}</TableCell>

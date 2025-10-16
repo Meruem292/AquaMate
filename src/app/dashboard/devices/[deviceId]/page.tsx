@@ -24,10 +24,14 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { format, isValid } from 'date-fns';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { format, isValid, startOfDay, endOfDay } from 'date-fns';
+import { Loader2, ArrowLeft, Calendar as CalendarIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { DateRange } from 'react-day-picker';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 export default function DeviceDetailsPage({
   params,
@@ -40,6 +44,16 @@ export default function DeviceDetailsPage({
   const [history, setHistory] = useState<DeviceData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // State for date range filtering
+  const [date, setDate] = React.useState<DateRange | undefined>({
+    from: startOfDay(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)),
+    to: endOfDay(new Date()),
+  });
+
+  // State for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     if (user) {
       getDevice(user.uid, deviceId, (deviceDetails) => {
@@ -47,7 +61,7 @@ export default function DeviceDetailsPage({
       });
 
       const unsubscribe = getDeviceDataHistory(deviceId, (dataHistory) => {
-        setHistory(dataHistory);
+        setHistory(dataHistory.sort((a, b) => b.timestamp - a.timestamp)); // Sort descending
         setIsLoading(false);
       });
 
@@ -56,6 +70,32 @@ export default function DeviceDetailsPage({
       setIsLoading(false);
     }
   }, [user, userLoading, deviceId]);
+
+  const filteredHistory = history.filter((d) => {
+    if (!date?.from || !date?.to) return true;
+    const timestampDate = new Date(d.timestamp);
+    return timestampDate >= date.from && timestampDate <= date.to;
+  });
+
+  const paginatedHistory = filteredHistory.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
 
   if (userLoading || isLoading) {
     return (
@@ -79,13 +119,16 @@ export default function DeviceDetailsPage({
     );
   }
 
-  const chartData = history.map((d) => {
+  // Chart data should be from filtered history, but not paginated
+  // Also, let's sort it ascending for the chart
+  const chartData = [...filteredHistory].reverse().map((d) => {
     const date = new Date(d.timestamp);
     return {
       ...d,
       timestamp: isValid(date) ? format(date, 'MMM d, HH:mm') : 'Invalid Date',
     }
   });
+
 
   return (
     <main className="flex-grow p-4 md:p-8">
@@ -108,7 +151,7 @@ export default function DeviceDetailsPage({
           <CardTitle>Sensor Data History</CardTitle>
         </CardHeader>
         <CardContent>
-          {history.length > 1 ? (
+          {filteredHistory.length > 1 ? (
             <ResponsiveContainer width="100%" height={400}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -146,7 +189,7 @@ export default function DeviceDetailsPage({
             </ResponsiveContainer>
           ) : (
              <div className="flex h-[400px] items-center justify-center text-muted-foreground">
-               <p>Not enough data to display a chart. Please generate more data.</p>
+               <p>Not enough data to display a chart for the selected range.</p>
              </div>
           )}
         </CardContent>
@@ -155,6 +198,44 @@ export default function DeviceDetailsPage({
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle>Data Readings</CardTitle>
+           <div className="flex items-center gap-4 pt-4">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date"
+                  variant={"outline"}
+                  className={cn(
+                    "w-[300px] justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date?.from ? (
+                    date.to ? (
+                      <>
+                        {format(date.from, "LLL dd, y")} -{" "}
+                        {format(date.to, "LLL dd, y")}
+                      </>
+                    ) : (
+                      format(date.from, "LLL dd, y")
+                    )
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={date?.from}
+                  selected={date}
+                  onSelect={setDate}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -167,8 +248,8 @@ export default function DeviceDetailsPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {history.length > 0 ? (
-                [...history].reverse().map((data, index) => (
+              {paginatedHistory.length > 0 ? (
+                paginatedHistory.map((data, index) => (
                   <TableRow key={`${data.timestamp}-${index}`}>
                     <TableCell>
                       {isValid(new Date(data.timestamp)) ? format(new Date(data.timestamp), 'PPpp') : 'Invalid Date'}
@@ -180,13 +261,24 @@ export default function DeviceDetailsPage({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
-                    No data readings found.
+                  <TableCell colSpan={4} className="text-center h-24">
+                    No data readings found for the selected date range.
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between mt-4">
+            <Button onClick={handlePreviousPage} disabled={currentPage === 1}>
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button onClick={handleNextPage} disabled={currentPage === totalPages}>
+              Next
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </main>

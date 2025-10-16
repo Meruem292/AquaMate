@@ -82,7 +82,7 @@ export function SignupForm() {
                   <FormControl>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="John Doe" {...field} className="pl-10" />
+                      <Input placeholder="Juan Dela Cruz" {...field} className="pl-10" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -114,7 +114,7 @@ export function SignupForm() {
                   <FormControl>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input type="tel" placeholder="+1 234 567 890" {...field} className="pl-10" />
+                      <Input type="tel" placeholder="0912-345-6789" {...field} className="pl-10" />
                     </div>
                   </FormControl>
                   <FormMessage />

@@ -132,11 +132,11 @@ export const getDeviceDataHistory = (
 export const addDummyDeviceData = async (deviceId: string) => {
   const deviceDataRef = getDeviceDataRef(deviceId);
   const newDataRef = push(deviceDataRef);
-  const dummyData: DeviceData = {
+  const dummyData: Omit<DeviceData, 'timestamp'> & { timestamp: number } = {
     ph: parseFloat((6.0 + Math.random() * 2.0).toFixed(1)), // pH between 6.0 and 8.0
     temperature: parseFloat((20.0 + Math.random() * 10.0).toFixed(1)), // Temp between 20.0 and 30.0
     ammonia: parseFloat((Math.random() * 1.0).toFixed(2)), // Ammonia between 0.0 and 1.0
-    timestamp: Date.now(),
+    timestamp: Math.floor(Date.now() / 1000), // Epoch timestamp in seconds
   };
   await set(newDataRef, dummyData);
 };

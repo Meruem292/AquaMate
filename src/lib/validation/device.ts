@@ -11,7 +11,7 @@ export const deviceDataSchema = z.object({
   ph: z.number(),
   temperature: z.number(),
   ammonia: z.number(),
-  timestamp: z.number(),
+  timestamp: z.number(), // Storing as epoch seconds
 });
 
 export type DeviceData = z.infer<typeof deviceDataSchema>;

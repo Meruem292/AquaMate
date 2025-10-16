@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import * as React from 'react';
 import { useUser } from '@/lib/firebase/useUser';
 import { getDevice, getDeviceDataHistory } from '@/lib/firebase/firestore';
 import { Device, DeviceData } from '@/lib/validation/device';
@@ -45,7 +46,7 @@ export default function DeviceDetailsPage({
   const [isLoading, setIsLoading] = useState(true);
 
   // State for date range filtering
-  const [date, setDate] = React.useState<DateRange | undefined>({
+  const [date, setDate] = useState<DateRange | undefined>({
     from: startOfDay(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)),
     to: endOfDay(new Date()),
   });

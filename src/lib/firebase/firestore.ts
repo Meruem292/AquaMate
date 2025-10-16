@@ -76,7 +76,8 @@ export const getDevice = (
 
 export const updateDevice = async (userId: string, device: Device) => {
   const deviceRef = getDeviceRef(userId, device.id);
-  await update(deviceRef, { name: device.name });
+  // We update the whole object to ensure all new fields are saved
+  await update(deviceRef, device);
 };
 
 export const deleteDevice = async (userId: string, deviceId: string) => {

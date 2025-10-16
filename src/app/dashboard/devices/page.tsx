@@ -48,8 +48,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 
 export default function DeviceManagementPage() {
   const { user, isLoading: userLoading } = useUser();
@@ -72,22 +72,28 @@ export default function DeviceManagementPage() {
     }
   }, [user, userLoading]);
 
-  const handleAddDevice = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>, isEditing: boolean) => {
     event.preventDefault();
     if (!user) return;
     setIsSubmitting(true);
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const newDeviceData = {
-      id: formData.get('deviceId') as string,
-      name: formData.get('deviceName') as string,
+    
+    const deviceData = {
+      id: isEditing ? editingDevice?.id : formData.get('deviceId'),
+      name: formData.get('deviceName'),
+      phMin: formData.get('phMin'),
+      phMax: formData.get('phMax'),
+      tempMin: formData.get('tempMin'),
+      tempMax: formData.get('tempMax'),
+      ammoniaMax: formData.get('ammoniaMax'),
     };
 
-    const validation = deviceSchema.safeParse(newDeviceData);
+    const validation = deviceSchema.safeParse(deviceData);
     if (!validation.success) {
       toast({
         title: 'Invalid Input',
-        description: validation.error.errors.map((e) => e.message).join(', '),
+        description: validation.error.errors.map((e) => e.message).join('\n'),
         variant: 'destructive',
       });
       setIsSubmitting(false);
@@ -95,65 +101,32 @@ export default function DeviceManagementPage() {
     }
 
     try {
-      await addDevice(user.uid, validation.data);
-      toast({
-        title: 'Success',
-        description: 'Device added successfully.',
-      });
+      if (isEditing) {
+        await updateDevice(user.uid, validation.data);
+         toast({
+          title: 'Success',
+          description: 'Device updated successfully.',
+        });
+      } else {
+        await addDevice(user.uid, validation.data);
+        toast({
+          title: 'Success',
+          description: 'Device added successfully.',
+        });
+      }
       setIsDialogOpen(false);
-      form.reset();
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description:
-          error.message || 'There was an error adding the device.',
-        variant: 'destructive',
-      });
-    }
-    setIsSubmitting(false);
-  };
-
-  const handleEditDevice = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!user || !editingDevice) return;
-    setIsSubmitting(true);
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const updatedData = {
-      id: editingDevice.id, // ID is not editable, so we keep the original
-      name: formData.get('deviceName') as string,
-    };
-
-    const validation = deviceSchema.safeParse(updatedData);
-
-    if (!validation.success) {
-      toast({
-        title: 'Invalid Input',
-        description: validation.error.errors.map((e) => e.message).join(', '),
-        variant: 'destructive',
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      await updateDevice(user.uid, validation.data);
-      toast({
-        title: 'Success',
-        description: 'Device updated successfully.',
-      });
       setEditingDevice(null);
-      setIsDialogOpen(false);
     } catch (error: any) {
       toast({
         title: 'Error',
         description:
-          error.message || 'There was an error updating the device.',
+          error.message || `There was an error ${isEditing ? 'updating' : 'adding'} the device.`,
         variant: 'destructive',
       });
     }
     setIsSubmitting(false);
   };
+
 
   const handleDeleteDevice = async (deviceId: string) => {
     if (!user) return;
@@ -191,19 +164,53 @@ export default function DeviceManagementPage() {
     device: Device | null;
   }) => (
     <form onSubmit={onSubmit} className="grid gap-4 py-4">
-      <Input
-        name="deviceId"
-        placeholder="Device ID"
-        defaultValue={device?.id || ''}
-        required
-        disabled={!!device}
-      />
-      <Input
-        name="deviceName"
-        placeholder="Device Name"
-        defaultValue={device?.name || ''}
-        required
-      />
+       <div className="grid gap-2">
+        <Label htmlFor="deviceId">Device ID</Label>
+        <Input
+          id="deviceId"
+          name="deviceId"
+          placeholder="e.g. A0-B1-C2-D3-E4-F5"
+          defaultValue={device?.id || ''}
+          required
+          disabled={!!device}
+          className="font-mono"
+        />
+      </div>
+      <div className="grid gap-2">
+         <Label htmlFor="deviceName">Device Name</Label>
+        <Input
+          id="deviceName"
+          name="deviceName"
+          placeholder="e.g. Main Tank Monitor"
+          defaultValue={device?.name || ''}
+          required
+        />
+      </div>
+
+       <div className="grid gap-2">
+        <Label>pH Range</Label>
+        <div className="flex items-center gap-2">
+          <Input type="number" name="phMin" placeholder="Min" defaultValue={device?.phMin ?? 6.5} required step="0.1" />
+          <span className="text-muted-foreground">to</span>
+          <Input type="number" name="phMax" placeholder="Max" defaultValue={device?.phMax ?? 8.0} required step="0.1" />
+        </div>
+      </div>
+
+       <div className="grid gap-2">
+        <Label>Temperature Range (°C)</Label>
+        <div className="flex items-center gap-2">
+          <Input type="number" name="tempMin" placeholder="Min" defaultValue={device?.tempMin ?? 24} required />
+          <span className="text-muted-foreground">to</span>
+          <Input type="number" name="tempMax" placeholder="Max" defaultValue={device?.tempMax ?? 32} required />
+        </div>
+      </div>
+
+       <div className="grid gap-2">
+        <Label htmlFor="ammoniaMax">Max Ammonia (ppm)</Label>
+        <Input id="ammoniaMax" type="number" name="ammoniaMax" placeholder="e.g. 0.5" defaultValue={device?.ammoniaMax ?? 0.5} required step="0.01" />
+      </div>
+
+
       <DialogFooter>
         <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -228,23 +235,26 @@ export default function DeviceManagementPage() {
           <h2 className="text-3xl font-bold tracking-tight">Device Management</h2>
           <p className="text-muted-foreground">Manage your AquaMate monitoring devices.</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
+          setIsDialogOpen(isOpen);
+          if (!isOpen) setEditingDevice(null);
+        }}>
           <DialogTrigger asChild>
             <Button onClick={openAddDialog}>
               <PlusCircle className="mr-2 h-4 w-4" /> Add Device
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[480px]">
             <DialogHeader>
               <DialogTitle>
                 {editingDevice ? 'Edit Device' : 'Add New Device'}
               </DialogTitle>
               <DialogDescription>
-                {editingDevice ? 'Update the details of your existing device.' : 'Add a new device to your account to start monitoring.'}
+                {editingDevice ? 'Update the details and ideal ranges for your device.' : 'Add a new device and set its ideal monitoring ranges.'}
               </DialogDescription>
             </DialogHeader>
             <DeviceForm
-              onSubmit={editingDevice ? handleEditDevice : handleAddDevice}
+              onSubmit={(e) => handleSubmit(e, !!editingDevice)}
               device={editingDevice}
             />
           </DialogContent>
@@ -258,6 +268,9 @@ export default function DeviceManagementPage() {
               <TableRow>
                 <TableHead>Device ID</TableHead>
                 <TableHead>Device Name</TableHead>
+                <TableHead>pH</TableHead>
+                <TableHead>Temp (°C)</TableHead>
+                <TableHead>Ammonia (ppm)</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -267,6 +280,9 @@ export default function DeviceManagementPage() {
                   <TableRow key={device.id}>
                     <TableCell className="font-mono">{device.id}</TableCell>
                     <TableCell className="font-medium">{device.name}</TableCell>
+                    <TableCell>{device.phMin}-{device.phMax}</TableCell>
+                    <TableCell>{device.tempMin}-{device.tempMax}</TableCell>
+                    <TableCell>&lt; {device.ammoniaMax}</TableCell>
                     <TableCell className="text-right">
                        <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -317,7 +333,7 @@ export default function DeviceManagementPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center h-24">
+                  <TableCell colSpan={6} className="text-center h-24">
                     No devices found.
                   </TableCell>
                 </TableRow>

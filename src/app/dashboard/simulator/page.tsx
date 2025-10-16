@@ -29,14 +29,16 @@ export default function SimulatorPage() {
   }, [user, userLoading]);
 
   const handleSimulate = async (deviceId: string) => {
+    if (!user) return;
     setIsSimulating(deviceId);
     try {
-      await addDummyDeviceData(deviceId);
+      await addDummyDeviceData(user.uid, deviceId);
       toast({
         title: 'Success',
         description: `Dummy data sent for device ${deviceId}.`,
       });
     } catch (error) {
+      console.error(error);
       toast({
         title: 'Error',
         description: 'Failed to send dummy data.',

@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarHeader,
@@ -13,16 +12,10 @@ import {
   SidebarMenuButton,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, Router, TestTube, User } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { LayoutDashboard, Router, TestTube, Bell } from 'lucide-react';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { UserNav } from '@/components/dashboard/UserNav';
+import { NotificationBell } from '@/components/dashboard/NotificationBell';
 
 export default function DashboardLayout({
   children,
@@ -58,6 +51,14 @@ export default function DashboardLayout({
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
+                <Link href="/dashboard/notifications">
+                  <Bell />
+                  Notifications
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
                 <Link href="/dashboard/simulator">
                   <TestTube />
                   Data Simulator
@@ -76,24 +77,8 @@ export default function DashboardLayout({
           <h1 className="text-xl font-semibold hidden md:block">Dashboard</h1>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="icon" className="rounded-full">
-                  <User className="h-5 w-5" />
-                  <span className="sr-only">Toggle user menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                   <Link href="/">Log Out</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <NotificationBell />
+            <UserNav />
           </div>
         </header>
         <main className="flex-1 bg-background">{children}</main>

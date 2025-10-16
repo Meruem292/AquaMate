@@ -27,3 +27,17 @@ export const deviceDataSchema = z.object({
 });
 
 export type DeviceData = z.infer<typeof deviceDataSchema>;
+
+export const notificationSchema = z.object({
+  id: z.string(),
+  deviceId: z.string(),
+  deviceName: z.string(),
+  parameter: z.enum(['pH', 'Temperature', 'Ammonia']),
+  value: z.number(),
+  threshold: z.string(),
+  range: z.string(),
+  timestamp: z.number(),
+  read: z.boolean(),
+});
+
+export type Notification = z.infer<typeof notificationSchema>;

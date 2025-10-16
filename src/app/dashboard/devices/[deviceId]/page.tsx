@@ -173,9 +173,9 @@ export default function DeviceDetailsPage({
                     <TableCell>
                       {isValid(new Date(data.timestamp)) ? format(new Date(data.timestamp), 'PPpp') : 'Invalid Date'}
                     </TableCell>
-                    <TableCell>{data.ph.toFixed(1)}</TableCell>
-                    <TableCell>{data.temperature.toFixed(1)}</TableCell>
-                    <TableCell>{data.ammonia.toFixed(2)}</TableCell>
+                    <TableCell>{typeof data.ph === 'number' ? data.ph.toFixed(1) : 'N/A'}</TableCell>
+                    <TableCell>{typeof data.temperature === 'number' ? data.temperature.toFixed(1) : 'N/A'}</TableCell>
+                    <TableCell>{typeof data.ammonia === 'number' ? data.ammonia.toFixed(2) : 'N/A'}</TableCell>
                   </TableRow>
                 ))
               ) : (

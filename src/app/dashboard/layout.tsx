@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -12,7 +13,7 @@ import {
   SidebarMenuButton,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, Router, TestTube, Bell } from 'lucide-react';
+import { LayoutDashboard, Router, TestTube, Bell, Settings } from 'lucide-react';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { UserNav } from '@/components/dashboard/UserNav';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
@@ -62,6 +63,14 @@ export default function DashboardLayout({
                 <Link href="/dashboard/simulator">
                   <TestTube />
                   Data Simulator
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/dashboard/settings">
+                  <Settings />
+                  Settings
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

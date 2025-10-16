@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -5,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
+  sendPasswordResetEmail,
   type AuthError
 } from "firebase/auth";
 import { app } from "./config";
@@ -42,3 +44,5 @@ export async function signInWithEmail(values: LoginValues) {
     return { user: null, error };
   }
 }
+
+export { auth, sendPasswordResetEmail };

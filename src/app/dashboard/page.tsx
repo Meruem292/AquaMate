@@ -42,7 +42,7 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
           <div className="flex flex-col">
             <span className="text-sm text-muted-foreground">pH Level</span>
             <span className="text-2xl font-bold">
-              {data ? (
+              {data && typeof data.ph === 'number' ? (
                 data.ph.toFixed(1)
               ) : (
                 <Loader2 className="h-6 w-6 animate-spin inline-block" />
@@ -52,7 +52,7 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
           <div className="flex flex-col">
             <span className="text-sm text-muted-foreground">Temperature</span>
             <span className="text-2xl font-bold">
-              {data ? (
+              {data && typeof data.temperature === 'number' ? (
                 `${data.temperature.toFixed(1)}°C`
               ) : (
                 <Loader2 className="h-6 w-6 animate-spin inline-block" />
@@ -62,7 +62,7 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
           <div className="flex flex-col">
             <span className="text-sm text-muted-foreground">Ammonia</span>
             <span className="text-2xl font-bold">
-              {data ? (
+              {data && typeof data.ammonia === 'number' ? (
                 `${data.ammonia.toFixed(2)} ppm`
               ) : (
                 <Loader2 className="h-6 w-6 animate-spin inline-block" />

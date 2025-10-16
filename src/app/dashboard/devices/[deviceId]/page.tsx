@@ -168,8 +168,8 @@ export default function DeviceDetailsPage({
             </TableHeader>
             <TableBody>
               {history.length > 0 ? (
-                [...history].reverse().map((data) => (
-                  <TableRow key={data.timestamp}>
+                [...history].reverse().map((data, index) => (
+                  <TableRow key={`${data.timestamp}-${index}`}>
                     <TableCell>
                       {isValid(new Date(data.timestamp)) ? format(new Date(data.timestamp), 'PPpp') : 'Invalid Date'}
                     </TableCell>

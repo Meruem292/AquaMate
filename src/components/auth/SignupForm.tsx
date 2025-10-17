@@ -63,7 +63,7 @@ export function SignupForm() {
     <Card className="max-w-md w-full mx-auto shadow-xl">
       <CardHeader className="text-center">
         <Link href="/" className="flex items-center justify-center gap-2 mb-4 text-foreground">
-          <Image src="/Aquamate.png" alt="AquaMate Logo" width={48} height={48} className="rounded-full" />
+          <Image src="https://picsum.photos/seed/logo/64/64" alt="AquaMate Logo" width={64} height={64} className="rounded-full" data-ai-hint="logo fish" />
         </Link>
         <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
         <CardDescription>

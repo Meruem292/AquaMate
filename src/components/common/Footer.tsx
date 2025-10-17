@@ -7,7 +7,7 @@ export function Footer() {
       <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-            <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} className="rounded-full" />
+            <Image src="https://picsum.photos/seed/logo/24/24" alt="AquaMate Logo" width={24} height={24} className="rounded-full" data-ai-hint="logo fish" />
             <span className="text-xl font-bold">AquaMate</span>
           </div>
           <p className="text-sm text-muted-foreground">

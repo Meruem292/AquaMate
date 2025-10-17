@@ -42,11 +42,12 @@ export default function Home() {
         {/* Hero Section */}
         <section className="relative h-[60vh] md:h-[70vh] flex items-center justify-center text-center text-white">
           <Image
-            src="/Aquamate_bg.jpg"
+            src="https://picsum.photos/seed/aquamate-bg/1200/800"
             alt="AquaMate hero background"
             fill
             className="object-cover"
             priority
+            data-ai-hint="underwater fish farm"
           />
           <div className="absolute inset-0 bg-black/60" />
           <div className="relative z-10 px-4 max-w-4xl">

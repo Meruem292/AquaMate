@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ export function Header() {
     <header className="py-4 px-4 sm:px-6 lg:px-8 bg-transparent absolute top-0 w-full z-10">
       <div className="container mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-white">
-          <Image src="https://picsum.photos/seed/logo/24/24" alt="AquaMate Logo" width={24} height={24} className="rounded-full" data-ai-hint="logo fish" />
+          <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} className="rounded-full" />
           <span className="text-xl font-bold">AquaMate</span>
         </Link>
         <nav className="hidden md:flex items-center gap-6">

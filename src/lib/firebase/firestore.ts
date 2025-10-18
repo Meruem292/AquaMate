@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -149,9 +150,10 @@ export const onDeviceDataUpdate = (
   deviceId: string,
   callback: (data: DeviceData) => void
 ) => {
-  // If a listener already exists for this device, return the existing unsubscribe function.
-  if (listenerCache.has(deviceId)) {
-    return listenerCache.get(deviceId)!;
+  const listenerKey = `${userId}-${deviceId}`;
+  // If a listener already exists for this device, don't create a new one.
+  if (listenerCache.has(listenerKey)) {
+    return () => {}; // Return a no-op function
   }
 
   const dataRef = getDeviceDataRef(deviceId);
@@ -160,13 +162,11 @@ export const onDeviceDataUpdate = (
   // 1. Get the last known value for initial UI display without triggering a notification.
   const initialQuery = query(dataRef, limitToLast(1));
   onValue(initialQuery, (snapshot) => {
-    if (!snapshot.exists()) {
-      initialDataLoaded = true; // No data, so we are "loaded"
-      return;
+    if (snapshot.exists()) {
+        const data = snapshot.val();
+        const key = Object.keys(data)[0];
+        callback(data[key]); // Update UI with the most recent value
     }
-    const data = snapshot.val();
-    const key = Object.keys(data)[0];
-    callback(data[key]); // Update UI with the most recent value
     initialDataLoaded = true;
   }, { onlyOnce: true });
 
@@ -184,10 +184,14 @@ export const onDeviceDataUpdate = (
   });
   
   // The 'childAddedListener' from onChildAdded is actually the unsubscribe function itself.
-  // We store it in our cache.
-  listenerCache.set(deviceId, childAddedListener);
+  const unsubscribe = () => {
+    childAddedListener();
+    listenerCache.delete(listenerKey);
+  }
+  
+  listenerCache.set(listenerKey, unsubscribe);
 
-  return childAddedListener; // Return the unsubscribe function
+  return unsubscribe; // Return the unsubscribe function
 };
 
 

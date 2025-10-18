@@ -193,8 +193,25 @@ const Sidebar = React.forwardRef<
     }
 
     if (isMobile) {
-        // We render nothing on mobile as BottomNav will be used
-        return null;
+      return (
+        <Sheet
+          open={openMobile}
+          onOpenChange={setOpenMobile}
+          modal={collapsible === "offcanvas"}
+        >
+          <SheetContent
+            side={side}
+            className="flex w-[--sidebar-width-mobile] flex-col p-0"
+            style={
+              {
+                "--sidebar-width-mobile": SIDEBAR_WIDTH_MOBILE,
+              } as React.CSSProperties
+            }
+          >
+            {children}
+          </SheetContent>
+        </Sheet>
+      )
     }
 
     return (

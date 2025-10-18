@@ -122,44 +122,51 @@ const createNotification = async (userId: string, device: Device & { sendSms?: b
 };
 
 
-export const checkDataAndCreateNotification = async (userId: string, deviceId: string) => {
-  const deviceSnapshot = await get(getDeviceRef(userId, deviceId));
-  if (!deviceSnapshot.exists()) {
-    console.error("Device settings not found for", deviceId);
-    return () => {};
-  }
-  const device: Device & { sendSms?: boolean } = deviceSnapshot.val();
-
+export const checkDataAndCreateNotification = (userId: string, deviceId: string) => {
   const dataRef = getDeviceDataRef(deviceId);
   const dataQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
-  
-  const listener = onChildAdded(dataQuery, (snapshot) => {
-    const data = snapshot.val() as DeviceData;
-    if (!data) return;
 
-    // IMPORTANT: Only check for notifications on RECENT data to avoid old alerts on load.
-    // We check if the timestamp is within the last minute.
-    const isRecent = (Date.now() - (data.timestamp * 1000)) < 60000;
-    if (!isRecent) return;
+  // Use a variable to hold the unsubscribe function.
+  let unsubscribe: Unsubscribe = () => {};
 
-    if (data.ph < device.phMin) {
-      createNotification(userId, device, 'pH', data.ph, 'Below Minimum', `${device.phMin} - ${device.phMax}`);
-    } else if (data.ph > device.phMax) {
-      createNotification(userId, device, 'pH', data.ph, 'Above Maximum', `${device.phMin} - ${device.phMax}`);
+  get(getDeviceRef(userId, deviceId)).then(deviceSnapshot => {
+    if (!deviceSnapshot.exists()) {
+      console.error("Device settings not found for", deviceId);
+      return;
     }
+    const device: Device & { sendSms?: boolean } = deviceSnapshot.val();
 
-    if (data.temperature < device.tempMin) {
-      createNotification(userId, device, 'Temperature', data.temperature, 'Below Minimum', `${device.tempMin}°C - ${device.tempMax}°C`);
-    } else if (data.temperature > device.tempMax) {
-      createNotification(userId, device, 'Temperature', data.temperature, 'Above Maximum', `${device.tempMin}°C - ${device.tempMax}°C`);
-    }
-    
-    if (data.ammonia > device.ammoniaMax) {
-        createNotification(userId, device, 'Ammonia', data.ammonia, 'Above Maximum', `< ${device.ammoniaMax} ppm`);
-    }
+    unsubscribe = onChildAdded(dataQuery, (snapshot) => {
+      const data = snapshot.val() as DeviceData;
+      if (!data) return;
+      
+      const isRecent = (Date.now() - (data.timestamp * 1000)) < 60000;
+      if (!isRecent) return;
+
+      if (data.ph < device.phMin) {
+        createNotification(userId, device, 'pH', data.ph, 'Below Minimum', `${device.phMin} - ${device.phMax}`);
+      } else if (data.ph > device.phMax) {
+        createNotification(userId, device, 'pH', data.ph, 'Above Maximum', `${device.phMin} - ${device.phMax}`);
+      }
+
+      if (data.temperature < device.tempMin) {
+        createNotification(userId, device, 'Temperature', data.temperature, 'Below Minimum', `${device.tempMin}°C - ${device.tempMax}°C`);
+      } else if (data.temperature > device.tempMax) {
+        createNotification(userId, device, 'Temperature', data.temperature, 'Above Maximum', `${device.tempMin}°C - ${device.tempMax}°C`);
+      }
+      
+      if (data.ammonia > device.ammoniaMax) {
+          createNotification(userId, device, 'Ammonia', data.ammonia, 'Above Maximum', `< ${device.ammoniaMax} ppm`);
+      }
+    });
   });
 
-  return () => off(dataQuery, 'child_added', listener);
+  // Return a function that will call the stored unsubscribe function.
+  return () => {
+    if (unsubscribe) {
+      off(dataQuery, 'child_added', unsubscribe);
+    }
+  };
 };
 
 // --- Device Data Functions ---

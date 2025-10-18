@@ -22,9 +22,6 @@ import { Device, DeviceData, Notification } from '../validation/device';
 
 const db = getDatabase(app);
 
-// Cache to prevent attaching multiple listeners to the same device
-const listenerCache: Record<string, Unsubscribe> = {};
-
 // --- References ---
 const getDevicesRef = (userId: string) => ref(db, `users/${userId}/devices`);
 const getDeviceRef = (userId: string, deviceId: string) => ref(db, `users/${userId}/devices/${deviceId}`);
@@ -96,97 +93,11 @@ export const deleteDevice = async (userId: string, deviceId: string) => {
 };
 
 
-// --- Notification and Data Check Functions ---
-
-const createNotification = async (userId: string, device: Device & { sendSms?: boolean }, parameter: 'pH' | 'Temperature' | 'Ammonia', value: number, threshold: string, range: string) => {
-    const notificationsRef = getNotificationsRef(userId);
-    const newNotificationRef = push(notificationsRef);
-    
-    const notificationPayload: Omit<Notification, 'id'> & { sms?: boolean } = {
-      deviceId: device.id,
-      deviceName: device.name,
-      parameter,
-      value,
-      threshold,
-      range,
-      timestamp: Date.now(),
-      read: false,
-    };
-
-    // If device has SMS enabled, add the sms flag to the notification
-    if (device.sendSms) {
-        notificationPayload.sms = true;
-    }
-
-    await set(newNotificationRef, notificationPayload);
-};
-
-
-export const checkDataAndCreateNotification = (userId: string, deviceId: string): Unsubscribe => {
-  // Prevent duplicate listeners
-  if (listenerCache[deviceId]) {
-    return listenerCache[deviceId];
-  }
-
-  const dataRef = getDeviceDataRef(deviceId);
-  const dataQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
-
-  let listener: Unsubscribe | null = null;
-
-  get(getDeviceRef(userId, deviceId)).then(deviceSnapshot => {
-    if (!deviceSnapshot.exists()) {
-      console.error("Device settings not found for", deviceId);
-      return;
-    }
-    const device: Device & { sendSms?: boolean } = deviceSnapshot.val();
-
-    // Use onChildAdded to only listen for NEW data
-    const handle = onChildAdded(dataQuery, (snapshot) => {
-      const data = snapshot.val() as DeviceData;
-      if (!data) return;
-      
-      // Check if the data is recent (within the last 60 seconds) to avoid old notifications
-      const isRecent = (Date.now() - (data.timestamp * 1000)) < 60000;
-      if (!isRecent) return;
-
-      if (data.ph < device.phMin) {
-        createNotification(userId, device, 'pH', data.ph, 'Below Minimum', `${device.phMin} - ${device.phMax}`);
-      } else if (data.ph > device.phMax) {
-        createNotification(userId, device, 'pH', data.ph, 'Above Maximum', `${device.phMin} - ${device.phMax}`);
-      }
-
-      if (data.temperature < device.tempMin) {
-        createNotification(userId, device, 'Temperature', data.temperature, 'Below Minimum', `${device.tempMin}°C - ${device.tempMax}°C`);
-      } else if (data.temperature > device.tempMax) {
-        createNotification(userId, device, 'Temperature', data.temperature, 'Above Maximum', `${device.tempMin}°C - ${device.tempMax}°C`);
-      }
-      
-      if (data.ammonia > device.ammoniaMax) {
-          createNotification(userId, device, 'Ammonia', data.ammonia, 'Above Maximum', `< ${device.ammoniaMax} ppm`);
-      }
-    });
-
-    // Create the unsubscribe function
-    listener = () => off(dataQuery, 'child_added', handle);
-    
-    // Store it in the cache
-    listenerCache[deviceId] = listener;
-  });
-
-  // Return an unsubscribe function that will be called on component unmount
-  return () => {
-    if (listenerCache[deviceId]) {
-      listenerCache[deviceId](); // Execute the unsubscribe function
-      delete listenerCache[deviceId]; // Remove from cache
-    }
-  };
-};
-
 // --- Device Data Functions ---
 
 /**
  * Gets the latest data for a device and listens for real-time updates.
- * This is for UI display ONLY and does not trigger notifications.
+ * This is for UI display ONLY.
  */
 export const onDeviceDataUpdate = (
   deviceId: string,

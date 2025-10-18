@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser } from '@/lib/firebase/useUser';
-import { getDevices, onDeviceDataUpdate, checkDataAndCreateNotification } from '@/lib/firebase/firestore';
+import { getDevices, onDeviceDataUpdate } from '@/lib/firebase/firestore';
 import { Device, DeviceData } from '@/lib/validation/device';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -22,13 +22,9 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
       setData(latestData);
     });
 
-    // This listener is for creating notifications ONLY.
-    const unsubscribeFromNotifications = checkDataAndCreateNotification(user.uid, device.id);
-
     // This will be called when the component unmounts
     return () => {
         unsubscribeFromData();
-        unsubscribeFromNotifications();
     };
   }, [device.id, user]);
   

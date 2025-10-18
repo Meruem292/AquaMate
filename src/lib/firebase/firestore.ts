@@ -22,18 +22,22 @@ const db = getDatabase(app);
 
 // --- References ---
 const getDevicesRef = (userId: string) => ref(db, `users/${userId}/devices`);
-const getDeviceRef = (userId: string, deviceId: string) => ref(db, `users/${userId}/devices/${deviceId}`);
+const getDeviceRef = (userId:string, deviceId: string) => ref(db, `users/${userId}/devices/${deviceId}`);
 const getDeviceDataRef = (deviceId: string) => ref(db, `devices/${deviceId}`);
 const getNotificationsRef = (userId: string) => ref(db, `users/${userId}/notifications`);
 
+
 // --- Device Functions ---
 
-export const addDevice = async (userId: string, device: Device & { sendSms?: boolean }) => {
+export const addDevice = async (userId: string, device: Device) => {
   const deviceRef = getDeviceRef(userId, device.id);
-  await set(deviceRef, {
-    ...device,
-    sendSms: device.sendSms || false,
-  });
+  const deviceData = { ...device };
+  // Ensure optional fields that are undefined are not written to Firebase
+  if (deviceData.phone === undefined) {
+    delete (deviceData as any).phone;
+  }
+  await set(deviceRef, deviceData);
+  
   // Create an initial data entry to prevent errors on the dashboard
   const initialData: DeviceData = {
     ph: (device.phMin + device.phMax) / 2,
@@ -71,9 +75,14 @@ export const getDevice = (
   return unsubscribe;
 };
 
-export const updateDevice = async (userId: string, device: Device & { sendSms?: boolean }) => {
+export const updateDevice = async (userId: string, device: Device) => {
   const deviceRef = getDeviceRef(userId, device.id);
-  await update(deviceRef, device);
+  const deviceData = { ...device };
+  if (deviceData.phone === undefined) {
+    // To remove the field from Firebase, we must set it to null in an update
+    (deviceData as any).phone = null;
+  }
+  await update(deviceRef, deviceData);
 };
 
 export const deleteDevice = async (userId: string, deviceId: string) => {

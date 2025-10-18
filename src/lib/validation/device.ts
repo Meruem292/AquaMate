@@ -9,6 +9,13 @@ export const deviceSchema = z.object({
   tempMin: z.number({ coerce: true }),
   tempMax: z.number({ coerce: true }),
   ammoniaMax: z.number({ coerce: true }),
+  phone: z.string()
+    .optional()
+    .or(z.literal(''))
+    .transform(e => e === "" ? undefined : e) // Transform empty string to undefined
+    .refine(e => e === undefined || (e.length === 11 && e.startsWith('09') && /^[0-9]+$/.test(e)), {
+      message: "Phone number must be 11 digits and start with '09'.",
+    }),
 }).refine(data => data.phMin < data.phMax, {
   message: "Min pH must be less than Max pH",
   path: ["phMin"],

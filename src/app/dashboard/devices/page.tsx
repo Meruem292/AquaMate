@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,7 +28,7 @@ import {
   getDevices,
   updateDevice,
 } from '@/lib/firebase/firestore';
-import { Loader2, PlusCircle, Trash2, Edit, MoreHorizontal } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, MoreHorizontal, Phone } from 'lucide-react';
 import { Device, deviceSchema } from '@/lib/validation/device';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -87,6 +88,7 @@ export default function DeviceManagementPage() {
       tempMin: formData.get('tempMin'),
       tempMax: formData.get('tempMax'),
       ammoniaMax: formData.get('ammoniaMax'),
+      phone: formData.get('phone'),
     };
 
     const validation = deviceSchema.safeParse(deviceData);
@@ -186,6 +188,20 @@ export default function DeviceManagementPage() {
           required
         />
       </div>
+      <div className="grid gap-2">
+        <Label htmlFor="phone">Phone Number (for SMS alerts)</Label>
+        <div className="relative">
+          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="phone"
+            name="phone"
+            type="tel"
+            placeholder="0912-345-6789"
+            defaultValue={device?.phone || ''}
+            className="pl-10"
+          />
+        </div>
+      </div>
 
        <div className="grid gap-2">
         <Label>pH Range</Label>
@@ -268,6 +284,7 @@ export default function DeviceManagementPage() {
               <TableRow>
                 <TableHead>Device ID</TableHead>
                 <TableHead>Device Name</TableHead>
+                <TableHead>Phone</TableHead>
                 <TableHead>pH</TableHead>
                 <TableHead>Temp (°C)</TableHead>
                 <TableHead>Ammonia (ppm)</TableHead>
@@ -280,6 +297,7 @@ export default function DeviceManagementPage() {
                   <TableRow key={device.id}>
                     <TableCell className="font-mono">{device.id}</TableCell>
                     <TableCell className="font-medium">{device.name}</TableCell>
+                    <TableCell>{device.phone || 'N/A'}</TableCell>
                     <TableCell>{device.phMin}-{device.phMax}</TableCell>
                     <TableCell>{device.tempMin}-{device.tempMax}</TableCell>
                     <TableCell>&lt; {device.ammoniaMax}</TableCell>
@@ -333,7 +351,7 @@ export default function DeviceManagementPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
+                  <TableCell colSpan={7} className="text-center h-24">
                     No devices found.
                   </TableCell>
                 </TableRow>

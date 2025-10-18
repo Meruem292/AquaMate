@@ -16,6 +16,7 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
 
   useEffect(() => {
     if (!user) return;
+    
     // This listener is for UI updates ONLY.
     const unsubscribeFromData = onDeviceDataUpdate(device.id, (latestData) => {
       setData(latestData);

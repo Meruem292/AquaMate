@@ -123,11 +123,15 @@ const createNotification = async (userId: string, device: Device & { sendSms?: b
 
 
 export const checkDataAndCreateNotification = (userId: string, deviceId: string) => {
+  // Prevent duplicate listeners
+  if (listenerCache[deviceId]) {
+    return listenerCache[deviceId];
+  }
+
   const dataRef = getDeviceDataRef(deviceId);
   const dataQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
 
-  // Use a variable to hold the unsubscribe function.
-  let unsubscribe: Unsubscribe = () => {};
+  let listener: Unsubscribe = () => {};
 
   get(getDeviceRef(userId, deviceId)).then(deviceSnapshot => {
     if (!deviceSnapshot.exists()) {
@@ -136,10 +140,11 @@ export const checkDataAndCreateNotification = (userId: string, deviceId: string)
     }
     const device: Device & { sendSms?: boolean } = deviceSnapshot.val();
 
-    unsubscribe = onChildAdded(dataQuery, (snapshot) => {
+    listener = onChildAdded(dataQuery, (snapshot) => {
       const data = snapshot.val() as DeviceData;
       if (!data) return;
       
+      // Check if the data is recent (within the last 60 seconds) to avoid old notifications
       const isRecent = (Date.now() - (data.timestamp * 1000)) < 60000;
       if (!isRecent) return;
 
@@ -159,12 +164,15 @@ export const checkDataAndCreateNotification = (userId: string, deviceId: string)
           createNotification(userId, device, 'Ammonia', data.ammonia, 'Above Maximum', `< ${device.ammoniaMax} ppm`);
       }
     });
+
+    listenerCache[deviceId] = listener;
   });
 
-  // Return a function that will call the stored unsubscribe function.
+  // Return an unsubscribe function
   return () => {
-    if (unsubscribe) {
-      off(dataQuery, 'child_added', unsubscribe);
+    if (listenerCache[deviceId]) {
+      off(dataQuery, 'child_added', listenerCache[deviceId]);
+      delete listenerCache[deviceId];
     }
   };
 };

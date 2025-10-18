@@ -56,23 +56,26 @@ export default function DeviceDetailsPage({
   const itemsPerPage = 10;
 
   useEffect(() => {
-    if (user) {
-      const unsubDevice = getDevice(user.uid, deviceId, (deviceDetails) => {
-        setDevice(deviceDetails);
-      });
+    if (!user) {
+      if (!userLoading) setIsLoading(false);
+      return;
+    };
+    
+    setIsLoading(true);
 
-      const unsubHistory = getDeviceDataHistory(deviceId, (dataHistory) => {
-        setHistory(dataHistory.sort((a, b) => b.timestamp - a.timestamp)); // Sort descending
-        setIsLoading(false);
-      });
+    const unsubDevice = getDevice(user.uid, deviceId, (deviceDetails) => {
+      setDevice(deviceDetails);
+    });
 
-      return () => {
-        unsubDevice();
-        unsubHistory();
-      };
-    } else if (!userLoading) {
+    const unsubHistory = getDeviceDataHistory(deviceId, (dataHistory) => {
+      setHistory(dataHistory.sort((a, b) => b.timestamp - a.timestamp)); // Sort descending
       setIsLoading(false);
-    }
+    });
+
+    return () => {
+      unsubDevice();
+      unsubHistory();
+    };
   }, [user, userLoading, deviceId]);
 
   const filteredHistory = history.filter((d) => {

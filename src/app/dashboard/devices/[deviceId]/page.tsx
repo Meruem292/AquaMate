@@ -68,7 +68,8 @@ export default function DeviceDetailsPage({
     });
 
     const unsubHistory = getDeviceDataHistory(deviceId, (dataHistory) => {
-      setHistory(dataHistory.sort((a, b) => b.timestamp - a.timestamp)); // Sort descending
+      // Sort descending by timestamp
+      setHistory(dataHistory.sort((a, b) => b.timestamp - a.timestamp)); 
       setIsLoading(false);
     });
 
@@ -80,7 +81,8 @@ export default function DeviceDetailsPage({
 
   const filteredHistory = history.filter((d) => {
     if (!date?.from || !date?.to) return true;
-    const timestampDate = new Date(d.timestamp);
+    // Timestamps from DB are in seconds, convert to milliseconds for JS Date
+    const timestampDate = new Date(d.timestamp * 1000);
     return timestampDate >= date.from && timestampDate <= date.to;
   });
 
@@ -129,7 +131,8 @@ export default function DeviceDetailsPage({
   // Chart data should be from filtered history, but not paginated
   // Also, let's sort it ascending for the chart
   const chartData = [...filteredHistory].reverse().map((d) => {
-    const date = new Date(d.timestamp);
+    // Timestamps from DB are in seconds, convert to milliseconds
+    const date = new Date(d.timestamp * 1000);
     return {
       ...d,
       timestamp: isValid(date) ? format(date, 'MMM d, HH:mm') : 'Invalid Date',
@@ -259,7 +262,8 @@ export default function DeviceDetailsPage({
                 paginatedHistory.map((data, index) => (
                   <TableRow key={`${data.timestamp}-${index}`}>
                     <TableCell>
-                      {isValid(new Date(data.timestamp)) ? format(new Date(data.timestamp), 'PPpp') : 'Invalid Date'}
+                      {/* Timestamps from DB are in seconds, convert to milliseconds */}
+                      {isValid(new Date(data.timestamp * 1000)) ? format(new Date(data.timestamp * 1000), 'PPpp') : 'Invalid Date'}
                     </TableCell>
                     <TableCell>{typeof data.ph === 'number' ? data.ph.toFixed(1) : 'N/A'}</TableCell>
                     <TableCell>{typeof data.temperature === 'number' ? data.temperature.toFixed(1) : 'N/A'}</TableCell>

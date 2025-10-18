@@ -40,7 +40,8 @@ export const addDevice = async (userId: string, device: Device & { sendSms?: boo
     ph: (device.phMin + device.phMax) / 2,
     temperature: (device.tempMin + device.tempMax) / 2,
     ammonia: device.ammoniaMax / 2,
-    timestamp: Date.now(), // Use milliseconds
+    // Ensure timestamp is in SECONDS to match device data
+    timestamp: Math.floor(Date.now() / 1000), 
   };
   const newDataRef = push(getDeviceDataRef(device.id));
   await set(newDataRef, initialData);
@@ -105,7 +106,8 @@ const createNotification = async (userId: string, device: Device & { sendSms?: b
       value,
       threshold,
       range,
-      timestamp: Date.now(), // Use milliseconds
+      // Store timestamp in seconds
+      timestamp: Math.floor(Date.now() / 1000),
       read: false,
     };
 

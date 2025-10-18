@@ -16,7 +16,7 @@ import {
   type Unsubscribe,
 } from 'firebase/database';
 import { app } from './config';
-import { Device, DeviceData, Notification } from '../validation/device';
+import { Device, DeviceData, Notification, NotificationFromDb } from '../validation/device';
 
 const db = getDatabase(app);
 
@@ -24,8 +24,9 @@ const db = getDatabase(app);
 const getDevicesRef = (userId: string) => ref(db, `users/${userId}/devices`);
 const getDeviceRef = (userId:string, deviceId: string) => ref(db, `users/${userId}/devices/${deviceId}`);
 const getDeviceDataRef = (deviceId: string) => ref(db, `devices/${deviceId}`);
-const getNotificationsRef = (userId: string) => ref(db, `users/${userId}/notifications`);
 
+// This is the new reference for notifications, nested under each device
+const getDeviceNotificationsRef = (deviceId: string) => ref(db, `devices/${deviceId}/notifications`);
 
 // --- Device Functions ---
 
@@ -56,7 +57,7 @@ export const getDevices = (
   const devicesRef = getDevicesRef(userId);
   const unsubscribe = onValue(devicesRef, (snapshot) => {
     const data = snapshot.val();
-    const devices = data ? Object.values(data) as Device[] : [];
+    const devices: Device[] = data ? Object.values(data) : [];
     callback(devices);
   });
   return unsubscribe;
@@ -77,10 +78,18 @@ export const getDevice = (
 
 export const updateDevice = async (userId: string, device: Device) => {
   const deviceRef = getDeviceRef(userId, device.id);
-  const deviceData = { ...device };
-  if (deviceData.phone === undefined) {
-    // To remove the field from Firebase, we must set it to null in an update
-    (deviceData as any).phone = null;
+  // Create a clean object to avoid saving `undefined`
+  const deviceData: Partial<Device> & {id: string} = {
+    id: device.id,
+    name: device.name,
+    phMin: device.phMin,
+    phMax: device.phMax,
+    tempMin: device.tempMin,
+    tempMax: device.tempMax,
+    ammoniaMax: device.ammoniaMax,
+  };
+  if (device.phone) {
+    deviceData.phone = device.phone;
   }
   await update(deviceRef, deviceData);
 };
@@ -88,15 +97,8 @@ export const updateDevice = async (userId: string, device: Device) => {
 export const deleteDevice = async (userId: string, deviceId: string) => {
   await remove(getDeviceRef(userId, deviceId));
   await remove(getDeviceDataRef(deviceId));
-  const notificationsRef = getNotificationsRef(userId);
-  const snapshot = await get(query(notificationsRef, orderByChild('deviceId'), ref(db, deviceId)));
-  if (snapshot.exists()) {
-    const updates: { [key: string]: null } = {};
-    snapshot.forEach((child) => {
-      updates[child.key!] = null;
-    });
-    await update(notificationsRef, updates);
-  }
+  // Also remove notifications for that device
+  await remove(getDeviceNotificationsRef(deviceId));
 };
 
 
@@ -104,7 +106,6 @@ export const deleteDevice = async (userId: string, deviceId: string) => {
 
 /**
  * Gets the latest data for a device and listens for real-time updates.
- * This is for UI display ONLY.
  */
 export const onDeviceDataUpdate = (
   deviceId: string,
@@ -142,27 +143,107 @@ export const getDeviceDataHistory = (
 
 // --- Notification Functions ---
 
+const enrichNotification = (notif: NotificationFromDb, id: string, device: Device): Notification => {
+  let range = '';
+  let threshold = '';
+  switch (notif.parameter.toLowerCase()) {
+    case 'ph':
+      range = `${device.phMin} - ${device.phMax}`;
+      threshold = notif.value < device.phMin ? `below ${device.phMin}` : `above ${device.phMax}`;
+      break;
+    case 'temperature':
+      range = `${device.tempMin}°C - ${device.tempMax}°C`;
+      threshold = notif.value < device.tempMin ? `below ${device.tempMin}°C` : `above ${device.tempMax}°C`;
+      break;
+    case 'ammonia':
+       range = `< ${device.ammoniaMax} ppm`;
+       threshold = `above ${device.ammoniaMax} ppm`;
+      break;
+  }
+  return {
+    ...notif,
+    id,
+    deviceId: device.id,
+    deviceName: device.name,
+    read: notif.read ?? false, // Default to false if 'read' is not present
+    range,
+    threshold,
+    parameter: notif.parameter.charAt(0).toUpperCase() + notif.parameter.slice(1),
+  };
+};
+
 export const getNotifications = (
   userId: string,
   callback: (notifications: Notification[]) => void
-) => {
-  const notificationsQuery = query(getNotificationsRef(userId), orderByChild('timestamp'));
-  const unsubscribe = onValue(notificationsQuery, (snapshot) => {
-    const data = snapshot.val();
-    const notifications = data ? Object.entries(data).map(([id, value]) => ({ id, ...(value as object) } as Notification)).reverse() : [];
-    callback(notifications);
+): Unsubscribe => {
+  const userDevicesRef = getDevicesRef(userId);
+  let allNotifications: { [deviceId: string]: Notification[] } = {};
+  let deviceListeners: Unsubscribe[] = [];
+
+  const userDevicesListener = onValue(userDevicesRef, (snapshot) => {
+    // Clear old listeners when user's devices change
+    deviceListeners.forEach(unsubscribe => unsubscribe());
+    deviceListeners = [];
+    allNotifications = {};
+
+    const userDevices = snapshot.val() as { [id: string]: Device } | null;
+    if (!userDevices) {
+      callback([]);
+      return;
+    }
+
+    Object.values(userDevices).forEach((device) => {
+      const notificationsRef = getDeviceNotificationsRef(device.id);
+      const notificationsQuery = query(notificationsRef, orderByChild('timestamp'));
+
+      const listener = onValue(notificationsQuery, (notifSnapshot) => {
+        const deviceNotifications: Notification[] = [];
+        notifSnapshot.forEach((childSnapshot) => {
+          const notifId = childSnapshot.key!;
+          const notifData = childSnapshot.val() as NotificationFromDb;
+          const enrichedNotif = enrichNotification(notifData, notifId, device);
+          deviceNotifications.push(enrichedNotif);
+        });
+        
+        allNotifications[device.id] = deviceNotifications;
+
+        // Combine all notifications from all devices, sort, and callback
+        const combined = Object.values(allNotifications).flat();
+        combined.sort((a, b) => b.timestamp - a.timestamp);
+        callback(combined);
+      });
+      
+      deviceListeners.push(listener);
+    });
   });
-  return unsubscribe;
+
+  // Return a function that unsubscribes from everything
+  return () => {
+    userDevicesListener();
+    deviceListeners.forEach(unsubscribe => unsubscribe());
+  };
 };
 
 export const markAllNotificationsAsRead = async (userId: string) => {
-  const notificationsRef = getNotificationsRef(userId);
-  const snapshot = await get(notificationsRef);
-  if (snapshot.exists()) {
-    const updates: { [key: string]: any } = {};
-    snapshot.forEach(child => {
-      updates[`${child.key}/read`] = true;
-    });
-    await update(notificationsRef, updates);
+  const userDevicesRef = getDevicesRef(userId);
+  const userDevicesSnap = await get(userDevicesRef);
+
+  if (userDevicesSnap.exists()) {
+    const devices = userDevicesSnap.val() as { [id: string]: Device };
+    for (const deviceId in devices) {
+      const notificationsRef = getDeviceNotificationsRef(deviceId);
+      const snapshot = await get(notificationsRef);
+      if (snapshot.exists()) {
+        const updates: { [key: string]: any } = {};
+        snapshot.forEach(child => {
+          if (!child.val().read) {
+            updates[`${child.key}/read`] = true;
+          }
+        });
+        if (Object.keys(updates).length > 0) {
+          await update(notificationsRef, updates);
+        }
+      }
+    }
   }
 };

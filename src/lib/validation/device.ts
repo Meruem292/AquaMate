@@ -31,21 +31,30 @@ export const deviceDataSchema = z.object({
   ph: z.number(),
   temperature: z.number(),
   ammonia: z.number(),
-  timestamp: z.number(), // Storing as epoch milliseconds
+  timestamp: z.number(), // Storing as epoch seconds
 });
 
 export type DeviceData = z.infer<typeof deviceDataSchema>;
 
-export const notificationSchema = z.object({
+// This is the schema for data read from devices/{deviceId}/notifications/{notificationId}
+const notificationFromDbSchema = z.object({
+  issue: z.string(),
+  parameter: z.string(), // Can't be an enum as we might not know all possible values
+  timestamp: z.number(), // epoch seconds
+  value: z.number(),
+});
+
+// This is the schema for the notification object used in the app, enriched with more info
+export const notificationSchema = notificationFromDbSchema.extend({
   id: z.string(),
   deviceId: z.string(),
   deviceName: z.string(),
-  parameter: z.enum(['pH', 'Temperature', 'Ammonia']),
-  value: z.number(),
-  threshold: z.string(),
-  range: z.string(),
-  timestamp: z.number(),
   read: z.boolean(),
+  // For UI display, we'll construct these
+  threshold: z.string(), 
+  range: z.string(),
 });
 
+
 export type Notification = z.infer<typeof notificationSchema>;
+export type NotificationFromDb = z.infer<typeof notificationFromDbSchema>;

@@ -15,17 +15,17 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 function NotificationItem({ notification }: { notification: Notification }) {
-    const isCritical = notification.parameter === 'Ammonia' || notification.value > 9 || notification.value < 6;
+    const isCritical = notification.parameter.toLowerCase() === 'ammonia';
     return (
         <div className="flex items-start gap-4 p-4 hover:bg-muted/50">
-            <AlertCircle className={cn("h-5 w-5 mt-1", isCritical ? 'text-destructive' : 'text-amber-500')} />
+            <AlertCircle className={cn("h-5 w-5 mt-1 shrink-0", isCritical ? 'text-destructive' : 'text-amber-500')} />
             <div className="grid gap-1">
                 <p className="font-semibold">{notification.deviceName}: High {notification.parameter}</p>
                 <p className="text-sm text-muted-foreground">
-                    Reading of <span className="font-bold">{notification.value}</span> is outside the set range of {notification.range}.
+                    Reading of <span className="font-bold">{notification.value.toFixed(2)}</span> is outside the set range of {notification.range}.
                 </p>
                 <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(notification.timestamp * 1000), { addSuffix: true })}
                 </p>
             </div>
         </div>
@@ -72,7 +72,7 @@ export function NotificationBell() {
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
-              {unreadCount}
+              {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
           <span className="sr-only">Toggle notifications</span>

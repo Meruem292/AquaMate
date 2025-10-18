@@ -65,7 +65,7 @@ export default function NotificationsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
             <p className="text-muted-foreground">History of all alerts from your devices.</p>
         </div>
-        <Button onClick={handleMarkAllRead}>
+        <Button onClick={handleMarkAllRead} disabled={notifications.filter(n => !n.read).length === 0}>
             <CheckCheck className="mr-2" /> Mark all as read
         </Button>
       </div>
@@ -77,9 +77,7 @@ export default function NotificationsPage() {
               <TableRow>
                 <TableHead>Status</TableHead>
                 <TableHead>Device</TableHead>
-                <TableHead>Parameter</TableHead>
-                <TableHead>Reading</TableHead>
-                <TableHead>Ideal Range</TableHead>
+                <TableHead>Message</TableHead>
                 <TableHead>Timestamp</TableHead>
               </TableRow>
             </TableHeader>
@@ -102,18 +100,18 @@ export default function NotificationsPage() {
                     </TableCell>
                     <TableCell>
                         <div className="flex items-center gap-2">
-                           <AlertCircle className={cn('h-4 w-4', notif.parameter === 'Ammonia' ? 'text-destructive' : 'text-amber-500')} />
-                           {notif.parameter}
+                           <AlertCircle className={cn('h-4 w-4 shrink-0', notif.parameter.toLowerCase() === 'ammonia' ? 'text-destructive' : 'text-amber-500')} />
+                           <p>
+                              High <span className="font-bold">{notif.parameter}</span> reading of <span className="font-bold">{notif.value.toFixed(2)}</span>. {notif.issue}. Ideal range is {notif.range}.
+                           </p>
                         </div>
                     </TableCell>
-                    <TableCell>{notif.value.toFixed(2)} ({notif.threshold})</TableCell>
-                    <TableCell>{notif.range}</TableCell>
-                    <TableCell>{format(new Date(notif.timestamp), 'PPpp')}</TableCell>
+                    <TableCell>{format(new Date(notif.timestamp * 1000), 'PPpp')}</TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-48">
+                  <TableCell colSpan={4} className="text-center h-48">
                     <p className="text-xl text-muted-foreground">No notifications yet!</p>
                     <p>All your device alerts will appear here.</p>
                   </TableCell>

@@ -14,6 +14,7 @@ import {
   push,
   get,
   off,
+  onChildAdded,
 } from 'firebase/database';
 import { app } from './config';
 import { Device, DeviceData, Notification } from '../validation/device';
@@ -150,33 +151,41 @@ export const onDeviceDataUpdate = (
   callback: (data: DeviceData | null) => void
 ) => {
   const dataRef = getDeviceDataRef(deviceId);
-  const dataQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
-  
-  let lastNotifiedTimestamp = 0;
+  const initialQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
 
-  const unsubscribe = onValue(dataQuery, (snapshot) => {
+  // Get the last known data point for initial display
+  get(initialQuery).then((snapshot) => {
     if (snapshot.exists()) {
       const data = snapshot.val();
       const key = Object.keys(data)[0];
       const latestData = data[key] as DeviceData;
-      
       callback(latestData);
-
-      // Check if we should notify
-      if (latestData.timestamp > lastNotifiedTimestamp) {
-        lastNotifiedTimestamp = latestData.timestamp;
-        // Check for alerts, but only for recent data to avoid old alerts on load
-        if (Date.now() / 1000 - latestData.timestamp < 60) { // check data from the last 60 seconds
-             checkDataAndCreateNotification(userId, deviceId, latestData);
-        }
-      }
     } else {
       callback(null);
     }
   });
 
-  return unsubscribe;
+  // Listen for new children added after the initial load
+  const newReadingsQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
+  const listener = onChildAdded(newReadingsQuery, (snapshot) => {
+      const latestData = snapshot.val() as DeviceData;
+      if (latestData) {
+        callback(latestData);
+        // Only check for notifications on recent data to avoid old alerts on load.
+        // Timestamp from DB is in seconds, convert to ms for comparison.
+        if (Date.now() - (latestData.timestamp * 1000) < 60000) { 
+           checkDataAndCreateNotification(userId, deviceId, latestData);
+        }
+      }
+  });
+
+  // The onChildAdded listener from firebase SDK doesn't have a direct unsubscribe method
+  // in the same way `onValue` does. Instead, we use `off()` on the ref.
+  return () => {
+    off(newReadingsQuery, 'child_added', listener);
+  };
 };
+
 
 export const getDeviceDataHistory = (
   deviceId: string,

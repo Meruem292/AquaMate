@@ -28,7 +28,7 @@ import {
   getDevices,
   updateDevice,
 } from '@/lib/firebase/firestore';
-import { Loader2, PlusCircle, Trash2, Edit, MoreHorizontal, Phone, Search, Timer } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, MoreHorizontal, Phone, Search, Timer, ChevronDown } from 'lucide-react';
 import { Device, deviceSchema } from '@/lib/validation/device';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -52,6 +52,121 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+
+function DeviceRow({ device, onEdit, onDelete }: { device: Device; onEdit: (device: Device) => void; onDelete: (deviceId: string) => void; }) {
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!isMobile) {
+    return (
+      <TableRow key={device.id}>
+        <TableCell className="font-mono whitespace-nowrap">{device.id}</TableCell>
+        <TableCell className="font-medium whitespace-nowrap">{device.name}</TableCell>
+        <TableCell className="whitespace-nowrap">{device.phone || 'N/A'}</TableCell>
+        <TableCell>{device.phMin}-{device.phMax}</TableCell>
+        <TableCell>{device.tempMin}-{device.tempMax}</TableCell>
+        <TableCell>&lt; {device.ammoniaMax}</TableCell>
+        <TableCell>{device.alertInterval}s</TableCell>
+        <TableCell className="text-right">
+          <DeviceActions device={device} onEdit={onEdit} onDelete={onDelete} />
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  return (
+    <Collapsible asChild key={device.id}>
+      <>
+        <TableRow className="border-b-0">
+          <TableCell colSpan={2} className="p-0">
+             <div className="flex items-center">
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-12">
+                    <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                    <span className="sr-only">Toggle details for {device.name}</span>
+                  </Button>
+                </CollapsibleTrigger>
+                <div className="py-4">
+                  <p className="font-medium">{device.name}</p>
+                  <p className="text-sm text-muted-foreground font-mono">{device.id}</p>
+                </div>
+            </div>
+          </TableCell>
+          <TableCell className="text-right p-0 pr-2">
+            <DeviceActions device={device} onEdit={onEdit} onDelete={onDelete} />
+          </TableCell>
+        </TableRow>
+        <CollapsibleContent asChild>
+          <tr className="bg-muted/50">
+            <td colSpan={3} className="p-0">
+              <div className="p-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div className="font-semibold">Phone:</div>
+                <div>{device.phone || 'N/A'}</div>
+
+                <div className="font-semibold">pH Range:</div>
+                <div>{device.phMin} - {device.phMax}</div>
+
+                <div className="font-semibold">Temp Range:</div>
+                <div>{device.tempMin}°C - {device.tempMax}°C</div>
+
+                <div className="font-semibold">Max Ammonia:</div>
+                <div>&lt; {device.ammoniaMax} ppm</div>
+
+                <div className="font-semibold">Alert Interval:</div>
+                <div>{device.alertInterval}s</div>
+              </div>
+            </td>
+          </tr>
+        </CollapsibleContent>
+      </>
+    </Collapsible>
+  )
+}
+
+
+const DeviceActions = ({ device, onEdit, onDelete }: { device: Device; onEdit: (device: Device) => void; onDelete: (deviceId: string) => void; }) => (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button aria-haspopup="true" size="icon" variant="ghost">
+        <MoreHorizontal className="h-4 w-4" />
+        <span className="sr-only">Toggle menu</span>
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end">
+      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+      <DropdownMenuItem onSelect={() => onEdit(device)}>
+        <Edit className="mr-2" /> Edit
+      </DropdownMenuItem>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+            <Trash2 className="mr-2" />
+            Delete
+          </DropdownMenuItem>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the device and all its data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => onDelete(device.id)} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </DropdownMenuContent>
+  </DropdownMenu>
+);
+
 
 export default function DeviceManagementPage() {
   const { user, isLoading: userLoading } = useUser();
@@ -61,6 +176,7 @@ export default function DeviceManagementPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // State for filters and pagination
   const [searchQuery, setSearchQuery] = useState('');
@@ -349,8 +465,8 @@ export default function DeviceManagementPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="w-full overflow-x-auto">
-            <Table>
+          <Table>
+             {!isMobile && (
               <TableHeader>
                 <TableRow>
                   <TableHead>Device ID</TableHead>
@@ -363,75 +479,34 @@ export default function DeviceManagementPage() {
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
+            )}
+             {isMobile && (
+                <TableHeader>
+                  <TableRow>
+                    <TableHead colSpan={2}>Device</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+              )}
               <TableBody>
                 {paginatedDevices.length > 0 ? (
                   paginatedDevices.map((device) => (
-                    <TableRow key={device.id}>
-                      <TableCell className="font-mono whitespace-nowrap">{device.id}</TableCell>
-                      <TableCell className="font-medium whitespace-nowrap">{device.name}</TableCell>
-                      <TableCell className="whitespace-nowrap">{device.phone || 'N/A'}</TableCell>
-                      <TableCell>{device.phMin}-{device.phMax}</TableCell>
-                      <TableCell>{device.tempMin}-{device.tempMax}</TableCell>
-                      <TableCell>&lt; {device.ammoniaMax}</TableCell>
-                      <TableCell>{device.alertInterval}s</TableCell>
-                      <TableCell className="text-right">
-                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onSelect={() => openEditDialog(device)}>
-                              <Edit className="mr-2" /> Edit
-                            </DropdownMenuItem>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                  <Trash2 className="mr-2 text-destructive" /> 
-                                  <span className="text-destructive">Delete</span>
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                               <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently
-                                    delete the device and all its data.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteDevice(device.id)}
-                                    className="bg-destructive hover:bg-destructive/90"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                    <DeviceRow 
+                      key={device.id} 
+                      device={device} 
+                      onEdit={openEditDialog}
+                      onDelete={handleDeleteDevice}
+                    />
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
+                    <TableCell colSpan={isMobile ? 3 : 8} className="h-24 text-center">
                       {searchQuery ? 'No devices match your search.' : 'No devices found.'}
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
-            </Table>
-          </div>
+          </Table>
         </CardContent>
       </Card>
       {totalPages > 1 && (
@@ -450,3 +525,5 @@ export default function DeviceManagementPage() {
     </div>
   );
 }
+
+    

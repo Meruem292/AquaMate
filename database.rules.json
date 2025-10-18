@@ -1,10 +1,14 @@
 {
   "rules": {
-    ".read": true,
-    ".write": true,
     "devices": {
       "$deviceId": {
         ".indexOn": "timestamp"
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
       }
     }
   }

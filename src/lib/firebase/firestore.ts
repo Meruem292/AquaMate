@@ -105,7 +105,7 @@ const createNotification = async (userId: string, device: Device & { sendSms?: b
       value,
       threshold,
       range,
-      timestamp: Date.now(), // Store timestamp in milliseconds
+      timestamp: Date.now(),
       read: false,
     };
 
@@ -153,39 +153,41 @@ export const onDeviceDataUpdate = (
   const dataRef = getDeviceDataRef(deviceId);
   const initialQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
 
-  // Get the last known data point for initial display
+  // 1. Get the last known data point for initial display
   get(initialQuery).then((snapshot) => {
     if (snapshot.exists()) {
       const data = snapshot.val();
       const key = Object.keys(data)[0];
-      const latestData = data[key] as DeviceData;
-      callback(latestData);
+      callback(data[key]);
     } else {
       callback(null);
     }
   });
 
-  // Listen for new children added after the initial load
+  // 2. Listen for NEW children added after the initial load.
+  // We use `onChildAdded` which is the most reliable way to listen for new items
+  // in a list-like structure in Firebase Realtime Database.
   const newReadingsQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
   const listener = onChildAdded(newReadingsQuery, (snapshot) => {
-      const latestData = snapshot.val() as DeviceData;
-      if (latestData) {
-        callback(latestData);
-        // Only check for notifications on recent data to avoid old alerts on load.
-        // Timestamp from DB is in seconds, convert to ms for comparison.
-        if (Date.now() - (latestData.timestamp * 1000) < 60000) { 
-           checkDataAndCreateNotification(userId, deviceId, latestData);
-        }
+    const latestData = snapshot.val() as DeviceData;
+    if (latestData) {
+      // Update the UI with the very latest data.
+      callback(latestData);
+      
+      // IMPORTANT: Only check for notifications on RECENT data to avoid old alerts on load.
+      // We check if the timestamp is within the last minute.
+      // Timestamp from DB is in seconds, convert to ms for comparison.
+      if (Date.now() - (latestData.timestamp * 1000) < 60000) { 
+         checkDataAndCreateNotification(userId, deviceId, latestData);
       }
+    }
   });
 
-  // The onChildAdded listener from firebase SDK doesn't have a direct unsubscribe method
-  // in the same way `onValue` does. Instead, we use `off()` on the ref.
+  // Return a function to clean up the listener when the component unmounts.
   return () => {
     off(newReadingsQuery, 'child_added', listener);
   };
 };
-
 
 export const getDeviceDataHistory = (
   deviceId: string,

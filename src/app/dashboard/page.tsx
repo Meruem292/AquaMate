@@ -16,6 +16,8 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
 
   useEffect(() => {
     if (!user) return;
+    // The onDeviceDataUpdate function now correctly handles listeners.
+    // It returns an unsubscribe function that we call on cleanup.
     const unsubscribe = onDeviceDataUpdate(user.uid, device.id, (latestData) => {
       setData(latestData);
     });

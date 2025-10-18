@@ -59,55 +59,57 @@ function NotificationRow({ notification }: { notification: Notification }) {
   }
 
   return (
-    <Collapsible asChild key={notification.id} onOpenChange={setIsOpen} className={cn(!notification.read && 'bg-accent/50')}>
-      <>
-        <TableRow className="border-b-0">
-          <TableCell colSpan={2} className="p-0">
-             <div className="flex items-center">
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-12">
-                    <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
-                    <span className="sr-only">Toggle details for {notification.deviceName}</span>
-                  </Button>
-                </CollapsibleTrigger>
-                <div className="py-4">
-                  <p className={cn("font-medium", !notification.read && 'font-bold')}>
-                    {notification.deviceName}: High {notification.parameter}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDistanceToNow(new Date(notification.timestamp * 1000), { addSuffix: true })}
-                  </p>
-                </div>
-            </div>
-          </TableCell>
-          <TableCell className="text-right p-2">
-            {!notification.read ? (
-              <Badge>New</Badge>
-            ) : (
-              <Badge variant="outline">Read</Badge>
-            )}
-          </TableCell>
-        </TableRow>
-        <CollapsibleContent asChild>
-          <tr className={cn("bg-muted/50", !notification.read && 'bg-accent/80')}>
-            <td colSpan={3} className="p-0">
-              <div className="p-4 grid grid-cols-1 gap-2 text-sm">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className={cn('h-4 w-4 shrink-0 mt-1', isCritical ? 'text-destructive' : 'text-amber-500')} />
-                   <p>
-                      High <span className="font-bold">{notification.parameter}</span> reading of <span className="font-bold">{notification.value.toFixed(2)}</span>. {notification.issue}. Ideal range is {notification.range}.
-                   </p>
-                </div>
-                 <div className="text-muted-foreground pl-6">
-                  {isValid(new Date(notification.timestamp * 1000)) ? format(new Date(notification.timestamp * 1000), 'PPpp') : 'Invalid Date'}
-                </div>
-                <div className="text-muted-foreground font-mono pl-6">{notification.deviceId}</div>
+    <>
+      <Collapsible asChild key={notification.id} onOpenChange={setIsOpen} className={cn(!notification.read && 'bg-accent/50')}>
+        <>
+          <TableRow className="border-b-0">
+            <TableCell colSpan={2} className="p-0">
+              <div className="flex items-center">
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="w-12">
+                      <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                      <span className="sr-only">Toggle details for {notification.deviceName}</span>
+                    </Button>
+                  </CollapsibleTrigger>
+                  <div className="py-4">
+                    <p className={cn("font-medium", !notification.read && 'font-bold')}>
+                      {notification.deviceName}: High {notification.parameter}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDistanceToNow(new Date(notification.timestamp * 1000), { addSuffix: true })}
+                    </p>
+                  </div>
               </div>
-            </td>
-          </tr>
-        </CollapsibleContent>
-      </>
-    </Collapsible>
+            </TableCell>
+            <TableCell className="text-right p-2">
+              {!notification.read ? (
+                <Badge>New</Badge>
+              ) : (
+                <Badge variant="outline">Read</Badge>
+              )}
+            </TableCell>
+          </TableRow>
+          <CollapsibleContent asChild>
+            <tr className={cn("bg-muted/50", !notification.read && 'bg-accent/80')}>
+              <td colSpan={3} className="p-0">
+                <div className="p-4 grid grid-cols-1 gap-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className={cn('h-4 w-4 shrink-0 mt-1', isCritical ? 'text-destructive' : 'text-amber-500')} />
+                    <p>
+                        High <span className="font-bold">{notification.parameter}</span> reading of <span className="font-bold">{notification.value.toFixed(2)}</span>. {notification.issue}. Ideal range is {notification.range}.
+                    </p>
+                  </div>
+                  <div className="text-muted-foreground pl-6">
+                    {isValid(new Date(notification.timestamp * 1000)) ? format(new Date(notification.timestamp * 1000), 'PPpp') : 'Invalid Date'}
+                  </div>
+                  <div className="text-muted-foreground font-mono pl-6">{notification.deviceId}</div>
+                </div>
+              </td>
+            </tr>
+          </CollapsibleContent>
+        </>
+      </Collapsible>
+    </>
   )
 }
 
@@ -212,7 +214,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-4">
+    <div className="p-4 md:p-8 space-y-4 pb-20 md:pb-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>

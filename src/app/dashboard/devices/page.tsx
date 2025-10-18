@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@/lib/firebase/useUser';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,7 +28,7 @@ import {
   getDevices,
   updateDevice,
 } from '@/lib/firebase/firestore';
-import { Loader2, PlusCircle, Trash2, Edit, MoreHorizontal, Phone } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, MoreHorizontal, Phone, Search } from 'lucide-react';
 import { Device, deviceSchema } from '@/lib/validation/device';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -61,6 +61,11 @@ export default function DeviceManagementPage() {
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const { toast } = useToast();
 
+  // State for filters and pagination
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     if (user) {
       const unsubscribe = getDevices(user.uid, (devices) => {
@@ -72,6 +77,47 @@ export default function DeviceManagementPage() {
       setIsLoading(false);
     }
   }, [user, userLoading]);
+
+  const filteredDevices = useMemo(() => {
+    return devices.filter((device) => {
+      if (searchQuery) {
+        const lowercasedQuery = searchQuery.toLowerCase();
+        const fullText = `${device.name} ${device.id}`.toLowerCase();
+        if (!fullText.includes(lowercasedQuery)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [devices, searchQuery]);
+  
+  useEffect(() => {
+    // Reset to page 1 whenever filters change
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+
+  const paginatedDevices = useMemo(() => {
+    return filteredDevices.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+  }, [filteredDevices, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredDevices.length / itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>, isEditing: boolean) => {
     event.preventDefault();
@@ -278,6 +324,17 @@ export default function DeviceManagementPage() {
       </div>
 
       <Card>
+        <CardHeader>
+          <div className="relative w-full md:w-1/2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                  placeholder="Search by name or ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+              />
+          </div>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -292,8 +349,8 @@ export default function DeviceManagementPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {devices.length > 0 ? (
-                devices.map((device) => (
+              {paginatedDevices.length > 0 ? (
+                paginatedDevices.map((device) => (
                   <TableRow key={device.id}>
                     <TableCell className="font-mono">{device.id}</TableCell>
                     <TableCell className="font-medium">{device.name}</TableCell>
@@ -351,8 +408,8 @@ export default function DeviceManagementPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center h-24">
-                    No devices found.
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    {searchQuery ? 'No devices match your search.' : 'No devices found.'}
                   </TableCell>
                 </TableRow>
               )}
@@ -360,6 +417,19 @@ export default function DeviceManagementPage() {
           </Table>
         </CardContent>
       </Card>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <Button onClick={handlePreviousPage} disabled={currentPage === 1} variant="outline">
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button onClick={handleNextPage} disabled={currentPage === totalPages} variant="outline">
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

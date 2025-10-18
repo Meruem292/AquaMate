@@ -28,7 +28,7 @@ import {
   getDevices,
   updateDevice,
 } from '@/lib/firebase/firestore';
-import { Loader2, PlusCircle, Trash2, Edit, MoreHorizontal, Phone, Search } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, MoreHorizontal, Phone, Search, Timer } from 'lucide-react';
 import { Device, deviceSchema } from '@/lib/validation/device';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -134,6 +134,7 @@ export default function DeviceManagementPage() {
       tempMin: formData.get('tempMin'),
       tempMax: formData.get('tempMax'),
       ammoniaMax: formData.get('ammoniaMax'),
+      alertInterval: formData.get('alertInterval'),
       phone: formData.get('phone'),
     };
 
@@ -272,6 +273,15 @@ export default function DeviceManagementPage() {
         <Input id="ammoniaMax" type="number" name="ammoniaMax" placeholder="e.g. 0.5" defaultValue={device?.ammoniaMax ?? 0.5} required step="0.01" />
       </div>
 
+      <div className="grid gap-2">
+        <Label htmlFor="alertInterval">Alert Interval (seconds)</Label>
+         <div className="relative">
+          <Timer className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input id="alertInterval" type="number" name="alertInterval" placeholder="e.g. 300" defaultValue={device?.alertInterval ?? 300} required step="1" className="pl-10" />
+        </div>
+        <p className="text-xs text-muted-foreground">Time to wait before sending another alert for the same parameter.</p>
+      </div>
+
 
       <DialogFooter>
         <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
@@ -345,6 +355,7 @@ export default function DeviceManagementPage() {
                 <TableHead>pH</TableHead>
                 <TableHead>Temp (°C)</TableHead>
                 <TableHead>Ammonia (ppm)</TableHead>
+                <TableHead>Alert Interval</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -358,6 +369,7 @@ export default function DeviceManagementPage() {
                     <TableCell>{device.phMin}-{device.phMax}</TableCell>
                     <TableCell>{device.tempMin}-{device.tempMax}</TableCell>
                     <TableCell>&lt; {device.ammoniaMax}</TableCell>
+                    <TableCell>{device.alertInterval}s</TableCell>
                     <TableCell className="text-right">
                        <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -408,7 +420,7 @@ export default function DeviceManagementPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     {searchQuery ? 'No devices match your search.' : 'No devices found.'}
                   </TableCell>
                 </TableRow>

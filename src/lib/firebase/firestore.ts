@@ -78,20 +78,7 @@ export const getDevice = (
 
 export const updateDevice = async (userId: string, device: Device) => {
   const deviceRef = getDeviceRef(userId, device.id);
-  // Create a clean object to avoid saving `undefined`
-  const deviceData: Partial<Device> & {id: string} = {
-    id: device.id,
-    name: device.name,
-    phMin: device.phMin,
-    phMax: device.phMax,
-    tempMin: device.tempMin,
-    tempMax: device.tempMax,
-    ammoniaMax: device.ammoniaMax,
-  };
-  if (device.phone) {
-    deviceData.phone = device.phone;
-  }
-  await update(deviceRef, deviceData);
+  await update(deviceRef, device);
 };
 
 export const deleteDevice = async (userId: string, deviceId: string) => {
@@ -201,8 +188,13 @@ export const getNotifications = (
         notifSnapshot.forEach((childSnapshot) => {
           const notifId = childSnapshot.key!;
           const notifData = childSnapshot.val() as NotificationFromDb;
-          const enrichedNotif = enrichNotification(notifData, notifId, device);
-          deviceNotifications.push(enrichedNotif);
+          // Ensure device has the necessary properties before enriching
+          if (device.phMin !== undefined && device.phMax !== undefined && 
+              device.tempMin !== undefined && device.tempMax !== undefined && 
+              device.ammoniaMax !== undefined) {
+            const enrichedNotif = enrichNotification(notifData, notifId, device);
+            deviceNotifications.push(enrichedNotif);
+          }
         });
         
         allNotifications[device.id] = deviceNotifications;

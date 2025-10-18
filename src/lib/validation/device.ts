@@ -9,6 +9,7 @@ export const deviceSchema = z.object({
   tempMin: z.number({ coerce: true }),
   tempMax: z.number({ coerce: true }),
   ammoniaMax: z.number({ coerce: true }),
+  alertInterval: z.number({ coerce: true }).min(0, 'Alert interval must be a positive number.'),
   phone: z.string()
     .optional()
     .or(z.literal(''))

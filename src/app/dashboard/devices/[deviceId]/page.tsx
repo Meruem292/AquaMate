@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import * as React from 'react';
 import { useUser } from '@/lib/firebase/useUser';
 import { getDevice, getDeviceDataHistory } from '@/lib/firebase/firestore';
 import { Device, DeviceData } from '@/lib/validation/device';
@@ -25,14 +24,79 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { format, isValid, startOfDay, endOfDay } from 'date-fns';
-import { Loader2, ArrowLeft, Calendar as CalendarIcon } from 'lucide-react';
+import { format, isValid, startOfDay, endOfDay, formatDistanceToNow } from 'date-fns';
+import { Loader2, ArrowLeft, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+
+function DataReadingRow({ data }: { data: DeviceData }) {
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!isMobile) {
+    return (
+      <TableRow>
+        <TableCell className="whitespace-nowrap">
+          {isValid(new Date(data.timestamp * 1000)) ? format(new Date(data.timestamp * 1000), 'PPpp') : 'Invalid Date'}
+        </TableCell>
+        <TableCell>{typeof data.ph === 'number' ? data.ph.toFixed(1) : 'N/A'}</TableCell>
+        <TableCell>{typeof data.temperature === 'number' ? data.temperature.toFixed(1) : 'N/A'}</TableCell>
+        <TableCell>{typeof data.ammonia === 'number' ? data.ammonia.toFixed(2) : 'N/A'}</TableCell>
+      </TableRow>
+    );
+  }
+  
+  return (
+    <Collapsible asChild key={data.timestamp} onOpenChange={setIsOpen}>
+      <>
+        <TableRow className="border-b-0">
+          <TableCell colSpan={2} className="p-0">
+             <div className="flex items-center">
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-12">
+                    <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                    <span className="sr-only">Toggle details for reading</span>
+                  </Button>
+                </CollapsibleTrigger>
+                <div className="py-4">
+                  <p className="font-medium">
+                     {isValid(new Date(data.timestamp * 1000)) ? format(new Date(data.timestamp * 1000), 'MMM d, yyyy') : 'Invalid Date'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDistanceToNow(new Date(data.timestamp * 1000), { addSuffix: true })}
+                  </p>
+                </div>
+            </div>
+          </TableCell>
+        </TableRow>
+        <CollapsibleContent asChild>
+          <tr className="bg-muted/50">
+            <td colSpan={2} className="p-0">
+              <div className="p-4 pl-16 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div className="font-semibold">pH Level:</div>
+                <div>{typeof data.ph === 'number' ? data.ph.toFixed(1) : 'N/A'}</div>
+
+                <div className="font-semibold">Temperature:</div>
+                <div>{typeof data.temperature === 'number' ? `${data.temperature.toFixed(1)}°C` : 'N/A'}</div>
+
+                <div className="font-semibold">Ammonia:</div>
+                <div>{typeof data.ammonia === 'number' ? `${data.ammonia.toFixed(2)} ppm` : 'N/A'}</div>
+              </div>
+            </td>
+          </tr>
+        </CollapsibleContent>
+      </>
+    </Collapsible>
+  )
+}
+
 
 export default function DeviceDetailsPage({
   params,
@@ -44,6 +108,7 @@ export default function DeviceDetailsPage({
   const [device, setDevice] = useState<Device | null>(null);
   const [history, setHistory] = useState<DeviceData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   // State for date range filtering
   const [date, setDate] = useState<DateRange | undefined>({
@@ -108,7 +173,7 @@ export default function DeviceDetailsPage({
 
   if (userLoading || isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-full flex-1 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -141,8 +206,8 @@ export default function DeviceDetailsPage({
 
 
   return (
-    <div className="p-4 md:p-8 pb-20 md:pb-8">
-      <div className="mb-6 flex items-center gap-4">
+    <div className="p-4 md:p-8 space-y-8">
+      <div className="flex items-center gap-4">
         <Button asChild variant="outline" size="icon">
           <Link href="/dashboard">
             <ArrowLeft />
@@ -248,33 +313,31 @@ export default function DeviceDetailsPage({
               </Popover>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="w-full overflow-x-auto">
+          <CardContent className="p-0">
+            <div className="w-full">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Timestamp</TableHead>
-                    <TableHead>pH Level</TableHead>
-                    <TableHead>Temperature (°C)</TableHead>
-                    <TableHead>Ammonia (ppm)</TableHead>
-                  </TableRow>
+                   {!isMobile ? (
+                    <TableRow>
+                      <TableHead>Timestamp</TableHead>
+                      <TableHead>pH Level</TableHead>
+                      <TableHead>Temperature (°C)</TableHead>
+                      <TableHead>Ammonia (ppm)</TableHead>
+                    </TableRow>
+                  ) : (
+                    <TableRow>
+                      <TableHead colSpan={2}>Reading</TableHead>
+                    </TableRow>
+                  )}
                 </TableHeader>
                 <TableBody>
                   {paginatedHistory.length > 0 ? (
                     paginatedHistory.map((data, index) => (
-                      <TableRow key={`${data.timestamp}-${index}`}>
-                        <TableCell className="whitespace-nowrap">
-                          {/* Timestamps from DB are in seconds, convert to milliseconds */}
-                          {isValid(new Date(data.timestamp * 1000)) ? format(new Date(data.timestamp * 1000), 'PPpp') : 'Invalid Date'}
-                        </TableCell>
-                        <TableCell>{typeof data.ph === 'number' ? data.ph.toFixed(1) : 'N/A'}</TableCell>
-                        <TableCell>{typeof data.temperature === 'number' ? data.temperature.toFixed(1) : 'N/A'}</TableCell>
-                        <TableCell>{typeof data.ammonia === 'number' ? data.ammonia.toFixed(2) : 'N/A'}</TableCell>
-                      </TableRow>
+                      <DataReadingRow key={`${data.timestamp}-${index}`} data={data} />
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center h-24">
+                      <TableCell colSpan={isMobile ? 2 : 4} className="text-center h-24">
                         No data readings found for the selected date range.
                       </TableCell>
                     </TableRow>
@@ -283,14 +346,14 @@ export default function DeviceDetailsPage({
               </Table>
             </div>
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <Button onClick={handlePreviousPage} disabled={currentPage === 1}>
+              <div className="flex items-center justify-between mt-4 px-4 pb-4">
+                <Button onClick={handlePreviousPage} disabled={currentPage === 1} variant="outline">
                   Previous
                 </Button>
                 <span className="text-sm text-muted-foreground">
                   Page {currentPage} of {totalPages}
                 </span>
-                <Button onClick={handleNextPage} disabled={currentPage === totalPages}>
+                <Button onClick={handleNextPage} disabled={currentPage === totalPages} variant="outline">
                   Next
                 </Button>
               </div>

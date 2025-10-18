@@ -65,7 +65,7 @@ export default function SettingsPage() {
 
   if (!user) {
     return (
-       <div className="flex h-full flex-1 items-center justify-center">
+       <div className="flex h-full flex-1 items-center justify-center text-center p-4">
         <p>You must be logged in to view this page.</p>
       </div>
     )
@@ -91,7 +91,7 @@ export default function SettingsPage() {
                 </Avatar>
                 <div className="grid gap-1">
                     <p className="text-lg font-semibold">{user.displayName}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <p className="text-sm text-muted-foreground break-all">{user.email}</p>
                 </div>
             </div>
           </CardContent>

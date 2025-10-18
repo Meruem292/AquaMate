@@ -45,7 +45,7 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
       <Card className={cn("shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl", colorClass)}>
         <CardHeader>
           <CardTitle className="text-xl">{device.name}</CardTitle>
-          <p className="text-sm text-muted-foreground">ID: {device.id}</p>
+          <p className="text-sm text-muted-foreground break-all">ID: {device.id}</p>
         </CardHeader>
         <CardContent className="grid grid-cols-3 gap-4 text-center">
           <div className="flex flex-col">
@@ -72,11 +72,12 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
             <span className="text-sm text-muted-foreground">Ammonia</span>
             <span className="text-2xl font-bold">
               {data && typeof data.ammonia === 'number' ? (
-                `${data.ammonia.toFixed(2)} ppm`
+                `${data.ammonia.toFixed(2)}`
               ) : (
                 <Loader2 className="h-6 w-6 animate-spin inline-block" />
               )}
             </span>
+             <span className="text-xs text-muted-foreground -mt-1">ppm</span>
           </div>
         </CardContent>
       </Card>

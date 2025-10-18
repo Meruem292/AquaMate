@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@/lib/firebase/useUser';
 import { getNotifications, markAllNotificationsAsRead } from '@/lib/firebase/firestore';
 import { Notification } from '@/lib/validation/device';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, CheckCheck, Calendar as CalendarIcon, Search } from 'lucide-react';
@@ -118,12 +118,12 @@ export default function NotificationsPage() {
 
   return (
     <main className="flex-grow p-4 md:p-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
           <p className="text-muted-foreground">History of all alerts from your devices.</p>
         </div>
-        <Button onClick={handleMarkAllRead} disabled={notifications.filter(n => !n.read).length === 0}>
+        <Button onClick={handleMarkAllRead} disabled={notifications.filter(n => !n.read).length === 0} className="w-full sm:w-auto">
           <CheckCheck className="mr-2" /> Mark all as read
         </Button>
       </div>
@@ -131,7 +131,7 @@ export default function NotificationsPage() {
       <Card className="shadow-lg">
         <CardHeader>
            <div className="flex flex-col md:flex-row items-center gap-4">
-             <div className="relative w-full md:w-1/2">
+             <div className="relative w-full md:flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                     placeholder="Search notifications..."
@@ -179,55 +179,57 @@ export default function NotificationsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Status</TableHead>
-                <TableHead>Device</TableHead>
-                <TableHead>Message</TableHead>
-                <TableHead>Timestamp</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedNotifications.length > 0 ? (
-                paginatedNotifications.map((notif) => (
-                  <TableRow key={notif.id} className={cn(!notif.read && 'bg-accent/50 font-semibold')}>
-                    <TableCell>
-                      {!notif.read ? (
-                          <Badge>New</Badge>
-                      ) : (
-                          <Badge variant="outline">Read</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>{notif.deviceName}</span>
-                        <span className="text-xs text-muted-foreground font-mono">{notif.deviceId}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                        <div className="flex items-center gap-2">
-                           <AlertCircle className={cn('h-4 w-4 shrink-0', notif.parameter.toLowerCase() === 'ammonia' ? 'text-destructive' : 'text-amber-500')} />
-                           <p>
-                              High <span className="font-bold">{notif.parameter}</span> reading of <span className="font-bold">{notif.value.toFixed(2)}</span>. {notif.issue}. Ideal range is {notif.range}.
-                           </p>
+          <div className="w-full overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Device</TableHead>
+                  <TableHead>Message</TableHead>
+                  <TableHead>Timestamp</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedNotifications.length > 0 ? (
+                  paginatedNotifications.map((notif) => (
+                    <TableRow key={notif.id} className={cn(!notif.read && 'bg-accent/50 font-semibold')}>
+                      <TableCell>
+                        {!notif.read ? (
+                            <Badge>New</Badge>
+                        ) : (
+                            <Badge variant="outline">Read</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col whitespace-nowrap">
+                          <span>{notif.deviceName}</span>
+                          <span className="text-xs text-muted-foreground font-mono">{notif.deviceId}</span>
                         </div>
-                    </TableCell>
-                    <TableCell>
-                      {isValid(new Date(notif.timestamp * 1000)) ? format(new Date(notif.timestamp * 1000), 'PPpp') : 'Invalid Date'}
+                      </TableCell>
+                      <TableCell>
+                          <div className="flex items-start md:items-center gap-2">
+                             <AlertCircle className={cn('h-4 w-4 shrink-0 mt-1 md:mt-0', notif.parameter.toLowerCase() === 'ammonia' ? 'text-destructive' : 'text-amber-500')} />
+                             <p>
+                                High <span className="font-bold">{notif.parameter}</span> reading of <span className="font-bold">{notif.value.toFixed(2)}</span>. {notif.issue}. Ideal range is {notif.range}.
+                             </p>
+                          </div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {isValid(new Date(notif.timestamp * 1000)) ? format(new Date(notif.timestamp * 1000), 'PPpp') : 'Invalid Date'}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center h-48">
+                      <p className="text-xl text-muted-foreground">No notifications found.</p>
+                      <p>Adjust your search or date range to find alerts.</p>
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center h-48">
-                    <p className="text-xl text-muted-foreground">No notifications found.</p>
-                    <p>Adjust your search or date range to find alerts.</p>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
            {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <Button onClick={handlePreviousPage} disabled={currentPage === 1} variant="outline">

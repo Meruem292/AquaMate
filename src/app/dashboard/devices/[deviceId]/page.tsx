@@ -116,7 +116,7 @@ export default function DeviceDetailsPage({
 
   if (!device) {
     return (
-      <div className="flex h-full flex-1 flex-col items-center justify-center gap-4">
+      <div className="flex h-full flex-1 flex-col items-center justify-center gap-4 text-center px-4">
         <p className="text-xl text-muted-foreground">Device not found.</p>
         <Button asChild variant="outline">
           <Link href="/dashboard">
@@ -149,10 +149,10 @@ export default function DeviceDetailsPage({
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             {device.name}
           </h1>
-          <p className="text-sm text-muted-foreground">ID: {device.id}</p>
+          <p className="text-sm text-muted-foreground break-all">ID: {device.id}</p>
         </div>
       </div>
 
@@ -165,7 +165,7 @@ export default function DeviceDetailsPage({
             <ResponsiveContainer width="100%" height={400}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="timestamp" />
+                <XAxis dataKey="timestamp" tick={{ fontSize: 12 }} tickMargin={10} />
                 <YAxis />
                 <Tooltip
                   contentStyle={{
@@ -198,7 +198,7 @@ export default function DeviceDetailsPage({
               </LineChart>
             </ResponsiveContainer>
           ) : (
-             <div className="flex h-[400px] items-center justify-center text-muted-foreground">
+             <div className="flex h-[400px] items-center justify-center text-center text-muted-foreground p-4">
                <p>Not enough data to display a chart for the selected range.</p>
              </div>
           )}
@@ -208,14 +208,14 @@ export default function DeviceDetailsPage({
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle>Data Readings</CardTitle>
-           <div className="flex items-center gap-4 pt-4">
+           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 pt-4">
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   id="date"
                   variant={"outline"}
                   className={cn(
-                    "w-[300px] justify-start text-left font-normal",
+                    "w-full md:w-[300px] justify-start text-left font-normal",
                     !date && "text-muted-foreground"
                   )}
                 >
@@ -248,48 +248,52 @@ export default function DeviceDetailsPage({
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>pH Level</TableHead>
-                <TableHead>Temperature (°C)</TableHead>
-                <TableHead>Ammonia (ppm)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedHistory.length > 0 ? (
-                paginatedHistory.map((data, index) => (
-                  <TableRow key={`${data.timestamp}-${index}`}>
-                    <TableCell>
-                      {/* Timestamps from DB are in seconds, convert to milliseconds */}
-                      {isValid(new Date(data.timestamp * 1000)) ? format(new Date(data.timestamp * 1000), 'PPpp') : 'Invalid Date'}
-                    </TableCell>
-                    <TableCell>{typeof data.ph === 'number' ? data.ph.toFixed(1) : 'N/A'}</TableCell>
-                    <TableCell>{typeof data.temperature === 'number' ? data.temperature.toFixed(1) : 'N/A'}</TableCell>
-                    <TableCell>{typeof data.ammonia === 'number' ? data.ammonia.toFixed(2) : 'N/A'}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
+          <div className="w-full overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center h-24">
-                    No data readings found for the selected date range.
-                  </TableCell>
+                  <TableHead>Timestamp</TableHead>
+                  <TableHead>pH Level</TableHead>
+                  <TableHead>Temperature (°C)</TableHead>
+                  <TableHead>Ammonia (ppm)</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          <div className="flex items-center justify-between mt-4">
-            <Button onClick={handlePreviousPage} disabled={currentPage === 1}>
-              Previous
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button onClick={handleNextPage} disabled={currentPage === totalPages}>
-              Next
-            </Button>
+              </TableHeader>
+              <TableBody>
+                {paginatedHistory.length > 0 ? (
+                  paginatedHistory.map((data, index) => (
+                    <TableRow key={`${data.timestamp}-${index}`}>
+                      <TableCell className="whitespace-nowrap">
+                        {/* Timestamps from DB are in seconds, convert to milliseconds */}
+                        {isValid(new Date(data.timestamp * 1000)) ? format(new Date(data.timestamp * 1000), 'PPpp') : 'Invalid Date'}
+                      </TableCell>
+                      <TableCell>{typeof data.ph === 'number' ? data.ph.toFixed(1) : 'N/A'}</TableCell>
+                      <TableCell>{typeof data.temperature === 'number' ? data.temperature.toFixed(1) : 'N/A'}</TableCell>
+                      <TableCell>{typeof data.ammonia === 'number' ? data.ammonia.toFixed(2) : 'N/A'}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center h-24">
+                      No data readings found for the selected date range.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <Button onClick={handlePreviousPage} disabled={currentPage === 1}>
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button onClick={handleNextPage} disabled={currentPage === totalPages}>
+                Next
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </main>

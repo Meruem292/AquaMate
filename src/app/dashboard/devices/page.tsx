@@ -49,7 +49,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -303,7 +303,7 @@ export default function DeviceManagementPage() {
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between space-y-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Device Management</h2>
           <p className="text-muted-foreground">Manage your AquaMate monitoring devices.</p>
@@ -313,7 +313,7 @@ export default function DeviceManagementPage() {
           if (!isOpen) setEditingDevice(null);
         }}>
           <DialogTrigger asChild>
-            <Button onClick={openAddDialog}>
+            <Button onClick={openAddDialog} className="w-full sm:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" /> Add Device
             </Button>
           </DialogTrigger>
@@ -349,87 +349,89 @@ export default function DeviceManagementPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Device ID</TableHead>
-                <TableHead>Device Name</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>pH</TableHead>
-                <TableHead>Temp (°C)</TableHead>
-                <TableHead>Ammonia (ppm)</TableHead>
-                <TableHead>Alert Interval</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedDevices.length > 0 ? (
-                paginatedDevices.map((device) => (
-                  <TableRow key={device.id}>
-                    <TableCell className="font-mono">{device.id}</TableCell>
-                    <TableCell className="font-medium">{device.name}</TableCell>
-                    <TableCell>{device.phone || 'N/A'}</TableCell>
-                    <TableCell>{device.phMin}-{device.phMax}</TableCell>
-                    <TableCell>{device.tempMin}-{device.tempMax}</TableCell>
-                    <TableCell>&lt; {device.ammoniaMax}</TableCell>
-                    <TableCell>{device.alertInterval}s</TableCell>
-                    <TableCell className="text-right">
-                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            aria-haspopup="true"
-                            size="icon"
-                            variant="ghost"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onSelect={() => openEditDialog(device)}>
-                            <Edit className="mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Trash2 className="mr-2 text-destructive" /> 
-                                <span className="text-destructive">Delete</span>
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                             <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently
-                                  delete the device and all its data.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteDevice(device.id)}
-                                  className="bg-destructive hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+          <div className="w-full overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Device ID</TableHead>
+                  <TableHead>Device Name</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>pH</TableHead>
+                  <TableHead>Temp (°C)</TableHead>
+                  <TableHead>Ammonia (ppm)</TableHead>
+                  <TableHead>Alert Interval</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedDevices.length > 0 ? (
+                  paginatedDevices.map((device) => (
+                    <TableRow key={device.id}>
+                      <TableCell className="font-mono whitespace-nowrap">{device.id}</TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">{device.name}</TableCell>
+                      <TableCell className="whitespace-nowrap">{device.phone || 'N/A'}</TableCell>
+                      <TableCell>{device.phMin}-{device.phMax}</TableCell>
+                      <TableCell>{device.tempMin}-{device.tempMax}</TableCell>
+                      <TableCell>&lt; {device.ammoniaMax}</TableCell>
+                      <TableCell>{device.alertInterval}s</TableCell>
+                      <TableCell className="text-right">
+                         <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onSelect={() => openEditDialog(device)}>
+                              <Edit className="mr-2" /> Edit
+                            </DropdownMenuItem>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Trash2 className="mr-2 text-destructive" /> 
+                                  <span className="text-destructive">Delete</span>
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                               <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently
+                                    delete the device and all its data.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteDevice(device.id)}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-24 text-center">
+                      {searchQuery ? 'No devices match your search.' : 'No devices found.'}
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    {searchQuery ? 'No devices match your search.' : 'No devices found.'}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
       {totalPages > 1 && (

@@ -43,7 +43,7 @@ export default function Home() {
         {/* Hero Section */}
         <section className="relative h-[60vh] md:h-[70vh] flex items-center justify-center text-center text-white">
           <Image
-            src="https://picsum.photos/seed/aquamate-bg/1200/800"
+            src="/Aquamate_bg.jpg"
             alt="AquaMate hero background"
             fill
             className="object-cover"

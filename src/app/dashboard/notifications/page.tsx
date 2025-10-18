@@ -117,7 +117,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="container mx-auto flex-grow p-4 md:p-8">
+    <div className="h-full p-4 md:p-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>

@@ -111,7 +111,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto flex-grow p-4 md:p-8">
+    <div className="h-full p-4 md:p-8">
       <h1 className="text-3xl font-bold tracking-tight mb-6">
         Device Dashboard
       </h1>

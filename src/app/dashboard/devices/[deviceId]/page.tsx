@@ -141,7 +141,7 @@ export default function DeviceDetailsPage({
 
 
   return (
-    <div className="container mx-auto flex-grow p-4 md:p-8">
+    <div className="h-full p-4 md:p-8">
       <div className="mb-6 flex items-center gap-4">
         <Button asChild variant="outline" size="icon">
           <Link href="/dashboard">
@@ -156,146 +156,148 @@ export default function DeviceDetailsPage({
         </div>
       </div>
 
-      <Card className="mb-8 shadow-lg">
-        <CardHeader>
-          <CardTitle>Sensor Data History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredHistory.length > 1 ? (
-            <ResponsiveContainer width="100%" height={400}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="timestamp" tick={{ fontSize: 12 }} tickMargin={10} />
-                <YAxis />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    borderColor: 'hsl(var(--border))',
-                  }}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="ph"
-                  stroke="hsl(var(--chart-1))"
-                  name="pH Level"
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="temperature"
-                  stroke="hsl(var(--chart-2))"
-                  name="Temperature (°C)"
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="ammonia"
-                  stroke="hsl(var(--chart-3))"
-                  name="Ammonia (ppm)"
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-             <div className="flex h-[400px] items-center justify-center text-center text-muted-foreground p-4">
-               <p>Not enough data to display a chart for the selected range.</p>
-             </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="space-y-8">
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle>Sensor Data History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredHistory.length > 1 ? (
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="timestamp" tick={{ fontSize: 12 }} tickMargin={10} />
+                  <YAxis />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      borderColor: 'hsl(var(--border))',
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="ph"
+                    stroke="hsl(var(--chart-1))"
+                    name="pH Level"
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="temperature"
+                    stroke="hsl(var(--chart-2))"
+                    name="Temperature (°C)"
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="ammonia"
+                    stroke="hsl(var(--chart-3))"
+                    name="Ammonia (ppm)"
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+               <div className="flex h-[400px] items-center justify-center text-center text-muted-foreground p-4">
+                 <p>Not enough data to display a chart for the selected range.</p>
+               </div>
+            )}
+          </CardContent>
+        </Card>
 
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>Data Readings</CardTitle>
-           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 pt-4">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="date"
-                  variant={"outline"}
-                  className={cn(
-                    "w-full md:w-[300px] justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date?.from ? (
-                    date.to ? (
-                      <>
-                        {format(date.from, "LLL dd, y")} -{" "}
-                        {format(date.to, "LLL dd, y")}
-                      </>
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle>Data Readings</CardTitle>
+             <div className="flex flex-col md:flex-row items-start md:items-center gap-4 pt-4">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="date"
+                    variant={"outline"}
+                    className={cn(
+                      "w-full md:w-[300px] justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date?.from ? (
+                      date.to ? (
+                        <>
+                          {format(date.from, "LLL dd, y")} -{" "}
+                          {format(date.to, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(date.from, "LLL dd, y")
+                      )
                     ) : (
-                      format(date.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={date?.from}
-                  selected={date}
-                  onSelect={setDate}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="w-full overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Timestamp</TableHead>
-                  <TableHead>pH Level</TableHead>
-                  <TableHead>Temperature (°C)</TableHead>
-                  <TableHead>Ammonia (ppm)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedHistory.length > 0 ? (
-                  paginatedHistory.map((data, index) => (
-                    <TableRow key={`${data.timestamp}-${index}`}>
-                      <TableCell className="whitespace-nowrap">
-                        {/* Timestamps from DB are in seconds, convert to milliseconds */}
-                        {isValid(new Date(data.timestamp * 1000)) ? format(new Date(data.timestamp * 1000), 'PPpp') : 'Invalid Date'}
-                      </TableCell>
-                      <TableCell>{typeof data.ph === 'number' ? data.ph.toFixed(1) : 'N/A'}</TableCell>
-                      <TableCell>{typeof data.temperature === 'number' ? data.temperature.toFixed(1) : 'N/A'}</TableCell>
-                      <TableCell>{typeof data.ammonia === 'number' ? data.ammonia.toFixed(2) : 'N/A'}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24">
-                      No data readings found for the selected date range.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <Button onClick={handlePreviousPage} disabled={currentPage === 1}>
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button onClick={handleNextPage} disabled={currentPage === totalPages}>
-                Next
-              </Button>
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={date?.from}
+                    selected={date}
+                    onSelect={setDate}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            <div className="w-full overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>pH Level</TableHead>
+                    <TableHead>Temperature (°C)</TableHead>
+                    <TableHead>Ammonia (ppm)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedHistory.length > 0 ? (
+                    paginatedHistory.map((data, index) => (
+                      <TableRow key={`${data.timestamp}-${index}`}>
+                        <TableCell className="whitespace-nowrap">
+                          {/* Timestamps from DB are in seconds, convert to milliseconds */}
+                          {isValid(new Date(data.timestamp * 1000)) ? format(new Date(data.timestamp * 1000), 'PPpp') : 'Invalid Date'}
+                        </TableCell>
+                        <TableCell>{typeof data.ph === 'number' ? data.ph.toFixed(1) : 'N/A'}</TableCell>
+                        <TableCell>{typeof data.temperature === 'number' ? data.temperature.toFixed(1) : 'N/A'}</TableCell>
+                        <TableCell>{typeof data.ammonia === 'number' ? data.ammonia.toFixed(2) : 'N/A'}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center h-24">
+                        No data readings found for the selected date range.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <Button onClick={handlePreviousPage} disabled={currentPage === 1}>
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button onClick={handleNextPage} disabled={currentPage === totalPages}>
+                  Next
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

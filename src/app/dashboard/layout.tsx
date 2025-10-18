@@ -73,7 +73,7 @@ export default function DashboardLayout({
 
         <SidebarInset className="flex flex-1 flex-col">
           <header className="flex h-14 shrink-0 items-center border-b bg-background px-4 lg:h-[60px]">
-            <div className="flex h-full w-full items-center justify-between">
+            <div className="container mx-auto flex h-full w-full items-center justify-between">
               {/* Mobile Header: Title + Actions */}
               <div className="flex items-center gap-2 md:hidden">
                 <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} className="rounded-full" />
@@ -89,8 +89,12 @@ export default function DashboardLayout({
               </div>
             </div>
           </header>
-          {/* Add padding to the bottom to avoid content being hidden by the bottom nav */}
-          <main className="flex-1 overflow-y-auto bg-background pb-20 md:pb-0">{children}</main>
+          {/* Main content area now handles its own scrolling and padding */}
+          <main className="flex-1 overflow-y-auto bg-background pb-20 md:pb-0">
+             <div className="container mx-auto h-full">
+                {children}
+             </div>
+          </main>
           
           {/* Mobile Bottom Navigation */}
           <BottomNav />

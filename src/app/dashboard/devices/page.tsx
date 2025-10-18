@@ -49,7 +49,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -418,7 +418,7 @@ export default function DeviceManagementPage() {
   }
 
   return (
-    <div className="container mx-auto flex-1 space-y-4 p-4 pt-6 md:p-8">
+    <div className="h-full space-y-4 p-4 pt-6 md:p-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Device Management</h2>
@@ -465,48 +465,50 @@ export default function DeviceManagementPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-             {!isMobile && (
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Device ID</TableHead>
-                  <TableHead>Device Name</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>pH</TableHead>
-                  <TableHead>Temp (°C)</TableHead>
-                  <TableHead>Ammonia (ppm)</TableHead>
-                  <TableHead>Alert Interval</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-            )}
-             {isMobile && (
+          <div className="w-full overflow-x-auto">
+            <Table>
+               {!isMobile && (
                 <TableHeader>
                   <TableRow>
-                    <TableHead colSpan={2}>Device</TableHead>
+                    <TableHead>Device ID</TableHead>
+                    <TableHead>Device Name</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>pH</TableHead>
+                    <TableHead>Temp (°C)</TableHead>
+                    <TableHead>Ammonia (ppm)</TableHead>
+                    <TableHead>Alert Interval</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
               )}
-              <TableBody>
-                {paginatedDevices.length > 0 ? (
-                  paginatedDevices.map((device) => (
-                    <DeviceRow 
-                      key={device.id} 
-                      device={device} 
-                      onEdit={openEditDialog}
-                      onDelete={handleDeleteDevice}
-                    />
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={isMobile ? 3 : 8} className="h-24 text-center">
-                      {searchQuery ? 'No devices match your search.' : 'No devices found.'}
-                    </TableCell>
-                  </TableRow>
+               {isMobile && (
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead colSpan={2}>Device</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 )}
-              </TableBody>
-          </Table>
+                <TableBody>
+                  {paginatedDevices.length > 0 ? (
+                    paginatedDevices.map((device) => (
+                      <DeviceRow 
+                        key={device.id} 
+                        device={device} 
+                        onEdit={openEditDialog}
+                        onDelete={handleDeleteDevice}
+                      />
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={isMobile ? 3 : 8} className="h-24 text-center">
+                        {searchQuery ? 'No devices match your search.' : 'No devices found.'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
       {totalPages > 1 && (

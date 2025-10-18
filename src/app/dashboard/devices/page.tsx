@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function DeviceManagementPage() {
   const { user, isLoading: userLoading } = useUser();
@@ -212,7 +213,7 @@ export default function DeviceManagementPage() {
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
     device: Device | null;
   }) => (
-    <form onSubmit={onSubmit} className="grid gap-4 py-4">
+    <form onSubmit={onSubmit} className="grid gap-4 py-4 px-1">
        <div className="grid gap-2">
         <Label htmlFor="deviceId">Device ID</Label>
         <Input
@@ -283,7 +284,7 @@ export default function DeviceManagementPage() {
       </div>
 
 
-      <DialogFooter>
+      <DialogFooter className="pt-4 pr-1">
         <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {device ? 'Save Changes' : 'Add Device'}
@@ -316,8 +317,8 @@ export default function DeviceManagementPage() {
               <PlusCircle className="mr-2 h-4 w-4" /> Add Device
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[480px]">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-md">
+             <DialogHeader>
               <DialogTitle>
                 {editingDevice ? 'Edit Device' : 'Add New Device'}
               </DialogTitle>
@@ -325,10 +326,12 @@ export default function DeviceManagementPage() {
                 {editingDevice ? 'Update the details and ideal ranges for your device.' : 'Add a new device and set its ideal monitoring ranges.'}
               </DialogDescription>
             </DialogHeader>
-            <DeviceForm
-              onSubmit={(e) => handleSubmit(e, !!editingDevice)}
-              device={editingDevice}
-            />
+            <ScrollArea className="max-h-[70vh] -mx-6 px-6">
+              <DeviceForm
+                onSubmit={(e) => handleSubmit(e, !!editingDevice)}
+                device={editingDevice}
+              />
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </div>
@@ -445,3 +448,5 @@ export default function DeviceManagementPage() {
     </div>
   );
 }
+
+    

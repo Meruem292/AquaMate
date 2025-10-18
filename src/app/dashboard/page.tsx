@@ -104,14 +104,14 @@ export default function DashboardPage() {
 
   if (userLoading || isLoading) {
     return (
-      <div className="flex h-full flex-1 items-center justify-center">
+      <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="h-full p-4 md:p-8">
+    <div className="p-4 md:p-8 pb-20 md:pb-8">
       <h1 className="text-3xl font-bold tracking-tight mb-6">
         Device Dashboard
       </h1>

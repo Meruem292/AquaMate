@@ -57,7 +57,7 @@ export default function SettingsPage() {
 
   if (userLoading) {
     return (
-      <div className="flex h-full flex-1 items-center justify-center">
+      <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -65,19 +65,19 @@ export default function SettingsPage() {
 
   if (!user) {
     return (
-       <div className="flex h-full flex-1 items-center justify-center text-center p-4">
+       <div className="flex h-screen items-center justify-center text-center p-4">
         <p>You must be logged in to view this page.</p>
       </div>
     )
   }
 
   return (
-    <div className="h-full p-4 md:p-8">
-       <div>
+    <div className="p-4 md:p-8 pb-20 md:pb-8">
+       <div className="mb-6">
             <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
             <p className="text-muted-foreground">Manage your account details and preferences.</p>
         </div>
-      <div className="mt-6 grid gap-6 max-w-2xl mx-auto">
+      <div className="grid gap-6 max-w-2xl mx-auto">
         <Card>
           <CardHeader>
             <CardTitle>Profile Information</CardTitle>

@@ -411,14 +411,14 @@ export default function DeviceManagementPage() {
 
   if (userLoading || isLoading) {
      return (
-      <div className="flex h-full flex-1 items-center justify-center">
+      <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="h-full space-y-4 p-4 pt-6 md:p-8">
+    <div className="space-y-4 p-4 pt-6 md:p-8 pb-20 md:pb-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Device Management</h2>

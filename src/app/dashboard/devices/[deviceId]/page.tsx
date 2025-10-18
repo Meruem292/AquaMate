@@ -108,7 +108,7 @@ export default function DeviceDetailsPage({
 
   if (userLoading || isLoading) {
     return (
-      <div className="flex h-full flex-1 items-center justify-center">
+      <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -141,7 +141,7 @@ export default function DeviceDetailsPage({
 
 
   return (
-    <div className="h-full p-4 md:p-8">
+    <div className="p-4 md:p-8 pb-20 md:pb-8">
       <div className="mb-6 flex items-center gap-4">
         <Button asChild variant="outline" size="icon">
           <Link href="/dashboard">

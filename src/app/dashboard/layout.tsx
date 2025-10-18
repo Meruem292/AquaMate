@@ -24,7 +24,7 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-      <div className="flex h-screen flex-col md:flex-row">
+      <div className="flex h-screen w-full">
         {/* Desktop Sidebar */}
         <Sidebar className="hidden md:flex">
           <SidebarHeader>
@@ -71,16 +71,17 @@ export default function DashboardLayout({
           </SidebarContent>
         </Sidebar>
 
-        <SidebarInset className="flex flex-1 flex-col">
+        {/* Main content with fixed header and bottom nav for mobile */}
+        <div className="flex flex-1 flex-col">
           <header className="flex h-14 shrink-0 items-center border-b bg-background px-4 lg:h-[60px]">
-            <div className="container mx-auto flex h-full w-full items-center justify-between">
+            <div className="flex h-full w-full items-center justify-between">
               {/* Mobile Header: Title + Actions */}
               <div className="flex items-center gap-2 md:hidden">
                 <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} className="rounded-full" />
                 <h1 className="text-lg font-semibold">AquaMate</h1>
               </div>
               {/* Desktop Header: Title */}
-              <h1 className="text-xl font-semibold hidden md:block">Dashboard</h1>
+              <h1 className="hidden text-xl font-semibold md:block">Dashboard</h1>
 
               <div className="flex items-center gap-4">
                 <ThemeToggle />
@@ -89,16 +90,14 @@ export default function DashboardLayout({
               </div>
             </div>
           </header>
-          {/* Main content area now handles its own scrolling and padding */}
-          <main className="flex-1 overflow-y-auto bg-background pb-20 md:pb-0">
-             <div className="container mx-auto h-full">
-                {children}
-             </div>
+          {/* Scrollable content area */}
+          <main className="flex-1 overflow-y-auto bg-muted/40">
+            {children}
           </main>
           
           {/* Mobile Bottom Navigation */}
           <BottomNav />
-        </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );

@@ -8,8 +8,8 @@ import { Notification } from '@/lib/validation/device';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, CheckCheck, Calendar as CalendarIcon, Search } from 'lucide-react';
-import { format, startOfDay, endOfDay, isValid } from 'date-fns';
+import { Loader2, AlertCircle, CheckCheck, Calendar as CalendarIcon, Search, ChevronDown } from 'lucide-react';
+import { format, startOfDay, endOfDay, isValid, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -17,12 +17,107 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { DateRange } from 'react-day-picker';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+
+function NotificationRow({ notification }: { notification: Notification }) {
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const isCritical = notification.parameter.toLowerCase() === 'ammonia';
+
+  if (!isMobile) {
+    return (
+      <TableRow key={notification.id} className={cn(!notification.read && 'bg-accent/50 font-semibold')}>
+        <TableCell>
+          {!notification.read ? (
+              <Badge>New</Badge>
+          ) : (
+              <Badge variant="outline">Read</Badge>
+          )}
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-col whitespace-nowrap">
+            <span>{notification.deviceName}</span>
+            <span className="text-xs text-muted-foreground font-mono">{notification.deviceId}</span>
+          </div>
+        </TableCell>
+        <TableCell>
+            <div className="flex items-start md:items-center gap-2">
+               <AlertCircle className={cn('h-4 w-4 shrink-0 mt-1 md:mt-0', isCritical ? 'text-destructive' : 'text-amber-500')} />
+               <p>
+                  High <span className="font-bold">{notification.parameter}</span> reading of <span className="font-bold">{notification.value.toFixed(2)}</span>. {notification.issue}. Ideal range is {notification.range}.
+               </p>
+            </div>
+        </TableCell>
+        <TableCell className="whitespace-nowrap">
+          {isValid(new Date(notification.timestamp * 1000)) ? format(new Date(notification.timestamp * 1000), 'PPpp') : 'Invalid Date'}
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  return (
+    <Collapsible asChild key={notification.id} onOpenChange={setIsOpen} className={cn(!notification.read && 'bg-accent/50')}>
+      <>
+        <TableRow className="border-b-0">
+          <TableCell colSpan={2} className="p-0">
+             <div className="flex items-center">
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-12">
+                    <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                    <span className="sr-only">Toggle details for {notification.deviceName}</span>
+                  </Button>
+                </CollapsibleTrigger>
+                <div className="py-4">
+                  <p className={cn("font-medium", !notification.read && 'font-bold')}>
+                    {notification.deviceName}: High {notification.parameter}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDistanceToNow(new Date(notification.timestamp * 1000), { addSuffix: true })}
+                  </p>
+                </div>
+            </div>
+          </TableCell>
+          <TableCell className="text-right p-2">
+            {!notification.read ? (
+              <Badge>New</Badge>
+            ) : (
+              <Badge variant="outline">Read</Badge>
+            )}
+          </TableCell>
+        </TableRow>
+        <CollapsibleContent asChild>
+          <tr className={cn("bg-muted/50", !notification.read && 'bg-accent/80')}>
+            <td colSpan={3} className="p-0">
+              <div className="p-4 grid grid-cols-1 gap-2 text-sm">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className={cn('h-4 w-4 shrink-0 mt-1', isCritical ? 'text-destructive' : 'text-amber-500')} />
+                   <p>
+                      High <span className="font-bold">{notification.parameter}</span> reading of <span className="font-bold">{notification.value.toFixed(2)}</span>. {notification.issue}. Ideal range is {notification.range}.
+                   </p>
+                </div>
+                 <div className="text-muted-foreground pl-6">
+                  {isValid(new Date(notification.timestamp * 1000)) ? format(new Date(notification.timestamp * 1000), 'PPpp') : 'Invalid Date'}
+                </div>
+                <div className="text-muted-foreground font-mono pl-6">{notification.deviceId}</div>
+              </div>
+            </td>
+          </tr>
+        </CollapsibleContent>
+      </>
+    </Collapsible>
+  )
+}
+
 
 export default function NotificationsPage() {
   const { user, isLoading: userLoading } = useUser();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // State for filters and pagination
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,8 +212,8 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 pb-20 md:pb-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+    <div className="p-4 md:p-8 space-y-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
           <p className="text-muted-foreground">History of all alerts from your devices.</p>
@@ -178,73 +273,58 @@ export default function NotificationsPage() {
             </Popover>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <div className="w-full overflow-x-auto">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Device</TableHead>
-                  <TableHead>Message</TableHead>
-                  <TableHead>Timestamp</TableHead>
-                </TableRow>
-              </TableHeader>
+               {!isMobile && (
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Device</TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead>Timestamp</TableHead>
+                    </TableRow>
+                  </TableHeader>
+               )}
+               {isMobile && (
+                 <TableHeader>
+                    <TableRow>
+                      <TableHead colSpan={2}>Alert</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+               )}
               <TableBody>
                 {paginatedNotifications.length > 0 ? (
                   paginatedNotifications.map((notif) => (
-                    <TableRow key={notif.id} className={cn(!notif.read && 'bg-accent/50 font-semibold')}>
-                      <TableCell>
-                        {!notif.read ? (
-                            <Badge>New</Badge>
-                        ) : (
-                            <Badge variant="outline">Read</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col whitespace-nowrap">
-                          <span>{notif.deviceName}</span>
-                          <span className="text-xs text-muted-foreground font-mono">{notif.deviceId}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                          <div className="flex items-start md:items-center gap-2">
-                             <AlertCircle className={cn('h-4 w-4 shrink-0 mt-1 md:mt-0', notif.parameter.toLowerCase() === 'ammonia' ? 'text-destructive' : 'text-amber-500')} />
-                             <p>
-                                High <span className="font-bold">{notif.parameter}</span> reading of <span className="font-bold">{notif.value.toFixed(2)}</span>. {notif.issue}. Ideal range is {notif.range}.
-                             </p>
-                          </div>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {isValid(new Date(notif.timestamp * 1000)) ? format(new Date(notif.timestamp * 1000), 'PPpp') : 'Invalid Date'}
-                      </TableCell>
-                    </TableRow>
+                    <NotificationRow key={notif.id} notification={notif} />
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center h-48">
-                      <p className="text-xl text-muted-foreground">No notifications found.</p>
-                      <p>Adjust your search or date range to find alerts.</p>
+                    <TableCell colSpan={isMobile ? 3 : 4} className="h-48 text-center">
+                       <p className="font-semibold">No notifications found.</p>
+                      <p className="text-muted-foreground">Adjust your search or date range to find alerts.</p>
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
-           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <Button onClick={handlePreviousPage} disabled={currentPage === 1} variant="outline">
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button onClick={handleNextPage} disabled={currentPage === totalPages} variant="outline">
-                Next
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <Button onClick={handlePreviousPage} disabled={currentPage === 1} variant="outline">
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button onClick={handleNextPage} disabled={currentPage === totalPages} variant="outline">
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

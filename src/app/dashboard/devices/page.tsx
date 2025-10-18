@@ -79,7 +79,7 @@ function DeviceRow({ device, onEdit, onDelete }: { device: Device; onEdit: (devi
   }
 
   return (
-    <Collapsible asChild key={device.id}>
+    <Collapsible asChild key={device.id} onOpenChange={setIsOpen}>
       <>
         <TableRow className="border-b-0">
           <TableCell colSpan={2} className="p-0">
@@ -418,7 +418,7 @@ export default function DeviceManagementPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+    <div className="container mx-auto flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Device Management</h2>
@@ -525,5 +525,3 @@ export default function DeviceManagementPage() {
     </div>
   );
 }
-
-    

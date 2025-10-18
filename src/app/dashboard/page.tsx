@@ -111,7 +111,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="flex-grow p-4 md:p-8">
+    <div className="container mx-auto flex-grow p-4 md:p-8">
       <h1 className="text-3xl font-bold tracking-tight mb-6">
         Device Dashboard
       </h1>
@@ -133,6 +133,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
-    </main>
+    </div>
   );
 }

@@ -141,7 +141,7 @@ export default function DeviceDetailsPage({
 
 
   return (
-    <main className="flex-grow p-4 md:p-8">
+    <div className="container mx-auto flex-grow p-4 md:p-8">
       <div className="mb-6 flex items-center gap-4">
         <Button asChild variant="outline" size="icon">
           <Link href="/dashboard">
@@ -296,6 +296,6 @@ export default function DeviceDetailsPage({
           )}
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }

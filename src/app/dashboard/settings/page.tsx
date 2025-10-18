@@ -72,7 +72,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="flex-grow p-4 md:p-8">
+    <div className="container mx-auto flex-grow p-4 md:p-8">
        <div>
             <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
             <p className="text-muted-foreground">Manage your account details and preferences.</p>
@@ -122,6 +122,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
-    </main>
+    </div>
   );
 }

@@ -72,8 +72,8 @@ export default function DashboardLayout({
         </Sidebar>
 
         <SidebarInset className="flex flex-1 flex-col">
-          <header className="flex h-14 shrink-0 items-center border-b bg-background lg:h-[60px]">
-            <div className="container mx-auto flex h-full w-full items-center justify-between">
+          <header className="flex h-14 shrink-0 items-center border-b bg-background px-4 lg:h-[60px]">
+            <div className="flex h-full w-full items-center justify-between">
               {/* Mobile Header: Title + Actions */}
               <div className="flex items-center gap-2 md:hidden">
                 <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} className="rounded-full" />

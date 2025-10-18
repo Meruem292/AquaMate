@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser } from '@/lib/firebase/useUser';
-import { getDevices, onDeviceDataUpdate } from '@/lib/firebase/firestore';
+import { getDevices, onDeviceDataUpdate, checkDataAndCreateNotification } from '@/lib/firebase/firestore';
 import { Device, DeviceData } from '@/lib/validation/device';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -16,13 +16,19 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
 
   useEffect(() => {
     if (!user) return;
-    // The onDeviceDataUpdate function now correctly handles listeners.
-    // It returns an unsubscribe function that we call on cleanup.
-    const unsubscribe = onDeviceDataUpdate(user.uid, device.id, (latestData) => {
+    // This listener is for UI updates ONLY.
+    const unsubscribeFromData = onDeviceDataUpdate(device.id, (latestData) => {
       setData(latestData);
     });
+
+    // This listener is for creating notifications ONLY.
+    const unsubscribeFromNotifications = checkDataAndCreateNotification(user.uid, device.id);
+
     // This will be called when the component unmounts
-    return () => unsubscribe();
+    return () => {
+        unsubscribeFromData();
+        unsubscribeFromNotifications();
+    };
   }, [device.id, user]);
   
   const cardColors = [

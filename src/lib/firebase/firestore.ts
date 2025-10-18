@@ -22,6 +22,9 @@ import { Device, DeviceData, Notification } from '../validation/device';
 
 const db = getDatabase(app);
 
+// Cache to prevent attaching multiple listeners to the same device
+const listenerCache: Record<string, Unsubscribe> = {};
+
 // --- References ---
 const getDevicesRef = (userId: string) => ref(db, `users/${userId}/devices`);
 const getDeviceRef = (userId: string, deviceId: string) => ref(db, `users/${userId}/devices/${deviceId}`);
@@ -119,56 +122,60 @@ const createNotification = async (userId: string, device: Device & { sendSms?: b
 };
 
 
-export const checkDataAndCreateNotification = async (userId: string, deviceId: string, data: DeviceData) => {
+export const checkDataAndCreateNotification = async (userId: string, deviceId: string) => {
   const deviceSnapshot = await get(getDeviceRef(userId, deviceId));
   if (!deviceSnapshot.exists()) {
     console.error("Device settings not found for", deviceId);
-    return;
+    return () => {};
   }
   const device: Device & { sendSms?: boolean } = deviceSnapshot.val();
-  
-  if (data.ph < device.phMin) {
-    await createNotification(userId, device, 'pH', data.ph, 'Below Minimum', `${device.phMin} - ${device.phMax}`);
-  } else if (data.ph > device.phMax) {
-    await createNotification(userId, device, 'pH', data.ph, 'Above Maximum', `${device.phMin} - ${device.phMax}`);
-  }
 
-  if (data.temperature < device.tempMin) {
-    await createNotification(userId, device, 'Temperature', data.temperature, 'Below Minimum', `${device.tempMin}°C - ${device.tempMax}°C`);
-  } else if (data.temperature > device.tempMax) {
-    await createNotification(userId, device, 'Temperature', data.temperature, 'Above Maximum', `${device.tempMin}°C - ${device.tempMax}°C`);
-  }
+  const dataRef = getDeviceDataRef(deviceId);
+  const dataQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
   
-  if (data.ammonia > device.ammoniaMax) {
-      await createNotification(userId, device, 'Ammonia', data.ammonia, 'Above Maximum', `< ${device.ammoniaMax} ppm`);
-  }
+  const listener = onChildAdded(dataQuery, (snapshot) => {
+    const data = snapshot.val() as DeviceData;
+    if (!data) return;
+
+    // IMPORTANT: Only check for notifications on RECENT data to avoid old alerts on load.
+    // We check if the timestamp is within the last minute.
+    const isRecent = (Date.now() - (data.timestamp * 1000)) < 60000;
+    if (!isRecent) return;
+
+    if (data.ph < device.phMin) {
+      createNotification(userId, device, 'pH', data.ph, 'Below Minimum', `${device.phMin} - ${device.phMax}`);
+    } else if (data.ph > device.phMax) {
+      createNotification(userId, device, 'pH', data.ph, 'Above Maximum', `${device.phMin} - ${device.phMax}`);
+    }
+
+    if (data.temperature < device.tempMin) {
+      createNotification(userId, device, 'Temperature', data.temperature, 'Below Minimum', `${device.tempMin}°C - ${device.tempMax}°C`);
+    } else if (data.temperature > device.tempMax) {
+      createNotification(userId, device, 'Temperature', data.temperature, 'Above Maximum', `${device.tempMin}°C - ${device.tempMax}°C`);
+    }
+    
+    if (data.ammonia > device.ammoniaMax) {
+        createNotification(userId, device, 'Ammonia', data.ammonia, 'Above Maximum', `< ${device.ammoniaMax} ppm`);
+    }
+  });
+
+  return () => off(dataQuery, 'child_added', listener);
 };
 
 // --- Device Data Functions ---
 
-// Cache to prevent attaching multiple listeners to the same device
-const listenerCache: Record<string, Unsubscribe> = {};
-
+/**
+ * Gets the latest data for a device and listens for real-time updates.
+ * This is for UI display ONLY and does not trigger notifications.
+ */
 export const onDeviceDataUpdate = (
-  userId: string,
   deviceId: string,
   callback: (data: DeviceData | null) => void
 ): Unsubscribe => {
-  const cacheKey = `${userId}-${deviceId}`;
-
-  // If a listener already exists for this device, do nothing and return a no-op unsubscribe function
-  if (listenerCache[cacheKey]) {
-    // console.log(`Listener already attached for ${cacheKey}. Skipping.`);
-    return () => {};
-  }
-  
   const dataRef = getDeviceDataRef(deviceId);
   const dataQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
-  let listener: Unsubscribe | null = null;
-  let initialDataLoaded = false;
   
-  // Get initial data for display
-  get(dataQuery).then(snapshot => {
+  const unsubscribe = onValue(dataQuery, (snapshot) => {
     if (snapshot.exists()) {
       const data = snapshot.val();
       const key = Object.keys(data)[0];
@@ -176,38 +183,7 @@ export const onDeviceDataUpdate = (
     } else {
       callback(null);
     }
-    initialDataLoaded = true;
   });
-
-  // Attach a listener for new children
-  listener = onChildAdded(dataQuery, (snapshot) => {
-    // Only process if the initial data has been loaded to avoid double processing on load
-    if (!initialDataLoaded) return;
-    
-    const latestData = snapshot.val() as DeviceData;
-    if (latestData) {
-      // Update the UI with the very latest data.
-      callback(latestData);
-      
-      // IMPORTANT: Only check for notifications on RECENT data to avoid old alerts on load.
-      // We check if the timestamp is within the last minute.
-      const isRecent = (Date.now() - (latestData.timestamp * 1000)) < 60000;
-      if (isRecent) {
-         checkDataAndCreateNotification(userId, deviceId, latestData);
-      }
-    }
-  });
-
-  const unsubscribe = () => {
-    if (listener) {
-      off(dataQuery, 'child_added', listener);
-    }
-    delete listenerCache[cacheKey]; // Remove from cache on cleanup
-    // console.log(`Listener detached for ${cacheKey}.`);
-  };
-
-  // Store the unsubscribe function in the cache
-  listenerCache[cacheKey] = unsubscribe;
 
   return unsubscribe;
 };

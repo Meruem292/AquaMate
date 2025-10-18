@@ -122,7 +122,7 @@ const createNotification = async (userId: string, device: Device & { sendSms?: b
 };
 
 
-export const checkDataAndCreateNotification = (userId: string, deviceId: string) => {
+export const checkDataAndCreateNotification = (userId: string, deviceId: string): Unsubscribe => {
   // Prevent duplicate listeners
   if (listenerCache[deviceId]) {
     return listenerCache[deviceId];
@@ -131,7 +131,7 @@ export const checkDataAndCreateNotification = (userId: string, deviceId: string)
   const dataRef = getDeviceDataRef(deviceId);
   const dataQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
 
-  let listener: Unsubscribe = () => {};
+  let listener: Unsubscribe | null = null;
 
   get(getDeviceRef(userId, deviceId)).then(deviceSnapshot => {
     if (!deviceSnapshot.exists()) {
@@ -140,7 +140,8 @@ export const checkDataAndCreateNotification = (userId: string, deviceId: string)
     }
     const device: Device & { sendSms?: boolean } = deviceSnapshot.val();
 
-    listener = onChildAdded(dataQuery, (snapshot) => {
+    // Use onChildAdded to only listen for NEW data
+    const handle = onChildAdded(dataQuery, (snapshot) => {
       const data = snapshot.val() as DeviceData;
       if (!data) return;
       
@@ -165,14 +166,18 @@ export const checkDataAndCreateNotification = (userId: string, deviceId: string)
       }
     });
 
+    // Create the unsubscribe function
+    listener = () => off(dataQuery, 'child_added', handle);
+    
+    // Store it in the cache
     listenerCache[deviceId] = listener;
   });
 
-  // Return an unsubscribe function
+  // Return an unsubscribe function that will be called on component unmount
   return () => {
     if (listenerCache[deviceId]) {
-      off(dataQuery, 'child_added', listenerCache[deviceId]);
-      delete listenerCache[deviceId];
+      listenerCache[deviceId](); // Execute the unsubscribe function
+      delete listenerCache[deviceId]; // Remove from cache
     }
   };
 };

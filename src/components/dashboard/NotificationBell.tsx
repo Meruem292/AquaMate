@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -24,7 +25,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
                     Reading of <span className="font-bold">{notification.value}</span> is outside the set range of {notification.range}.
                 </p>
                 <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(notification.timestamp * 1000), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
                 </p>
             </div>
         </div>

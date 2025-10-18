@@ -14,6 +14,7 @@ import {
   push,
   get,
   onChildAdded,
+  off,
 } from 'firebase/database';
 import { app } from './config';
 import { Device, DeviceData, Notification } from '../validation/device';
@@ -32,7 +33,7 @@ export const addDevice = async (userId: string, device: Device & { sendSms?: boo
   const deviceRef = getDeviceRef(userId, device.id);
   await set(deviceRef, {
     ...device,
-    sendSms: device.sendSms || false, // Ensure sendSms is explicitly false if not provided
+    sendSms: device.sendSms || false,
   });
   // Create an initial data entry to prevent errors on the dashboard
   const initialData: DeviceData = {
@@ -104,7 +105,7 @@ const createNotification = async (userId: string, device: Device & { sendSms?: b
       value,
       threshold,
       range,
-      timestamp: Math.floor(Date.now() / 1000),
+      timestamp: Date.now(), // Use milliseconds
       read: false,
     };
 
@@ -151,53 +152,51 @@ export const onDeviceDataUpdate = (
   callback: (data: DeviceData) => void
 ) => {
   const listenerKey = `${userId}-${deviceId}`;
-  // If a listener already exists for this device, don't create a new one.
+
   if (listenerCache.has(listenerKey)) {
-    return () => {}; // Return a no-op function for cleanup
+    return listenerCache.get(listenerKey)!;
   }
 
   const dataRef = getDeviceDataRef(deviceId);
   let initialDataLoaded = false;
+  let lastKnownTimestamp = 0;
 
-  // 1. Get the last known value for initial UI display without triggering a notification.
   const initialQuery = query(dataRef, limitToLast(1));
+
   onValue(initialQuery, (snapshot) => {
     if (snapshot.exists()) {
-        const data = snapshot.val();
-        const key = Object.keys(data)[0];
-        callback(data[key]); // Update UI with the most recent value
+      const data = snapshot.val();
+      const key = Object.keys(data)[0];
+      const latestData = data[key] as DeviceData;
+      lastKnownTimestamp = latestData.timestamp;
+      callback(latestData);
     }
-    // Set timeout to ensure child_added doesn't fire for initial data
-    setTimeout(() => {
-        initialDataLoaded = true;
-    }, 1000);
-
+    
+    if (!initialDataLoaded) {
+      initialDataLoaded = true;
+      const childAddedListener = onChildAdded(dataRef, (snapshot) => {
+        const newData = snapshot.val() as DeviceData;
+        if (newData && newData.timestamp > lastKnownTimestamp) {
+          lastKnownTimestamp = newData.timestamp;
+          callback(newData);
+          checkDataAndCreateNotification(userId, deviceId, newData);
+        }
+      });
+      
+      const unsubscribe = () => {
+        off(dataRef, 'child_added', childAddedListener);
+        listenerCache.delete(listenerKey);
+      };
+      listenerCache.set(listenerKey, unsubscribe);
+    }
   }, { onlyOnce: true });
 
-  // 2. Listen for NEW children added after the initial load.
-  const childAddedListener = onChildAdded(query(dataRef, limitToLast(1)), (snapshot) => {
-    if (!initialDataLoaded) {
-      return; // Don't process items during initial load phase
+  return () => {
+    if (listenerCache.has(listenerKey)) {
+      listenerCache.get(listenerKey)!();
     }
-    const data = snapshot.val() as DeviceData;
-    if (!data) return;
-
-    // A new child has been added, update the UI and check for notifications.
-    callback(data);
-    checkDataAndCreateNotification(userId, deviceId, data);
-  });
-  
-  // The 'childAddedListener' from onChildAdded is the 'off' function.
-  const unsubscribe = () => {
-    childAddedListener();
-    listenerCache.delete(listenerKey);
-  }
-  
-  listenerCache.set(listenerKey, unsubscribe);
-
-  return unsubscribe; // Return the actual unsubscribe function
+  };
 };
-
 
 export const getDeviceDataHistory = (
   deviceId: string,
@@ -206,11 +205,7 @@ export const getDeviceDataHistory = (
   const historyQuery = query(getDeviceDataRef(deviceId), orderByChild('timestamp'));
   const unsubscribe = onValue(historyQuery, (snapshot) => {
     const data = snapshot.val();
-    const history = data ? Object.values(data).map(d => ({
-        ...d as DeviceData,
-        // Ensure timestamp is in seconds for consistency with old data if it exists
-        timestamp: (d as any).timestamp > 1000000000000 ? Math.floor((d as any).timestamp / 1000) : (d as any).timestamp,
-    })) : [];
+    const history = data ? Object.values(data).map(d => d as DeviceData) : [];
     callback(history);
   });
   return unsubscribe;

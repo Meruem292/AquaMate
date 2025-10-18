@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -107,7 +108,7 @@ export default function NotificationsPage() {
                     </TableCell>
                     <TableCell>{notif.value.toFixed(2)} ({notif.threshold})</TableCell>
                     <TableCell>{notif.range}</TableCell>
-                    <TableCell>{format(new Date(notif.timestamp * 1000), 'PPpp')}</TableCell>
+                    <TableCell>{format(new Date(notif.timestamp), 'PPpp')}</TableCell>
                   </TableRow>
                 ))
               ) : (

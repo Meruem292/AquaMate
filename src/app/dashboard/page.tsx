@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,7 +20,6 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
       setData(latestData);
     });
     return () => unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [device.id, user]);
   
   const cardColors = [

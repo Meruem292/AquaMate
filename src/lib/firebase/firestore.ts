@@ -153,7 +153,7 @@ export const onDeviceDataUpdate = (
   const listenerKey = `${userId}-${deviceId}`;
   // If a listener already exists for this device, don't create a new one.
   if (listenerCache.has(listenerKey)) {
-    return () => {}; // Return a no-op function
+    return () => {}; // Return a no-op function for cleanup
   }
 
   const dataRef = getDeviceDataRef(deviceId);
@@ -167,11 +167,15 @@ export const onDeviceDataUpdate = (
         const key = Object.keys(data)[0];
         callback(data[key]); // Update UI with the most recent value
     }
-    initialDataLoaded = true;
+    // Set timeout to ensure child_added doesn't fire for initial data
+    setTimeout(() => {
+        initialDataLoaded = true;
+    }, 1000);
+
   }, { onlyOnce: true });
 
   // 2. Listen for NEW children added after the initial load.
-  const childAddedListener = onChildAdded(dataRef, (snapshot) => {
+  const childAddedListener = onChildAdded(query(dataRef, limitToLast(1)), (snapshot) => {
     if (!initialDataLoaded) {
       return; // Don't process items during initial load phase
     }
@@ -183,7 +187,7 @@ export const onDeviceDataUpdate = (
     checkDataAndCreateNotification(userId, deviceId, data);
   });
   
-  // The 'childAddedListener' from onChildAdded is actually the unsubscribe function itself.
+  // The 'childAddedListener' from onChildAdded is the 'off' function.
   const unsubscribe = () => {
     childAddedListener();
     listenerCache.delete(listenerKey);
@@ -191,7 +195,7 @@ export const onDeviceDataUpdate = (
   
   listenerCache.set(listenerKey, unsubscribe);
 
-  return unsubscribe; // Return the unsubscribe function
+  return unsubscribe; // Return the actual unsubscribe function
 };
 
 

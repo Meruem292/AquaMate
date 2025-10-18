@@ -151,19 +151,21 @@ export const onDeviceDataUpdate = (
   deviceId: string,
   callback: (data: DeviceData) => void
 ) => {
-  const listenerKey = `${userId}-${deviceId}`;
+  const listenerKey = `data-${deviceId}`;
 
+  // Prevent duplicate listeners
   if (listenerCache.has(listenerKey)) {
     return listenerCache.get(listenerKey)!;
   }
 
   const dataRef = getDeviceDataRef(deviceId);
-  let initialDataLoaded = false;
+  const dataQuery = query(dataRef, orderByChild('timestamp'));
   let lastKnownTimestamp = 0;
-
-  const initialQuery = query(dataRef, limitToLast(1));
-
-  onValue(initialQuery, (snapshot) => {
+  let initialDataLoaded = false;
+  
+  // 1. Get the latest data point for initial display
+  const initialQuery = query(dataQuery, limitToLast(1));
+  get(initialQuery).then((snapshot) => {
     if (snapshot.exists()) {
       const data = snapshot.val();
       const key = Object.keys(data)[0];
@@ -171,31 +173,29 @@ export const onDeviceDataUpdate = (
       lastKnownTimestamp = latestData.timestamp;
       callback(latestData);
     }
-    
-    if (!initialDataLoaded) {
-      initialDataLoaded = true;
-      const childAddedListener = onChildAdded(dataRef, (snapshot) => {
-        const newData = snapshot.val() as DeviceData;
-        if (newData && newData.timestamp > lastKnownTimestamp) {
-          lastKnownTimestamp = newData.timestamp;
-          callback(newData);
-          checkDataAndCreateNotification(userId, deviceId, newData);
-        }
-      });
-      
-      const unsubscribe = () => {
-        off(dataRef, 'child_added', childAddedListener);
-        listenerCache.delete(listenerKey);
-      };
-      listenerCache.set(listenerKey, unsubscribe);
-    }
-  }, { onlyOnce: true });
+    initialDataLoaded = true;
+  });
 
-  return () => {
-    if (listenerCache.has(listenerKey)) {
-      listenerCache.get(listenerKey)!();
+  // 2. Listen for new children added after the initial load
+  const childAddedListener = onChildAdded(dataQuery, (snapshot) => {
+    if (!initialDataLoaded) return;
+    
+    const newData = snapshot.val() as DeviceData;
+    if (newData && newData.timestamp > lastKnownTimestamp) {
+        lastKnownTimestamp = newData.timestamp;
+        callback(newData);
+        checkDataAndCreateNotification(userId, deviceId, newData);
     }
+  });
+
+  const unsubscribe = () => {
+    off(dataRef, 'child_added', childAddedListener);
+    listenerCache.delete(listenerKey);
   };
+  
+  listenerCache.set(listenerKey, unsubscribe);
+
+  return unsubscribe;
 };
 
 export const getDeviceDataHistory = (

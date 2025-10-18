@@ -21,6 +21,7 @@ function DeviceCard({ device, index }: { device: Device; index: number }) {
     const unsubscribe = onDeviceDataUpdate(user.uid, device.id, (latestData) => {
       setData(latestData);
     });
+    // This will be called when the component unmounts
     return () => unsubscribe();
   }, [device.id, user]);
   

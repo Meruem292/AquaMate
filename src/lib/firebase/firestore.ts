@@ -15,6 +15,7 @@ import {
   get,
   off,
   onChildAdded,
+  type Unsubscribe,
 } from 'firebase/database';
 import { app } from './config';
 import { Device, DeviceData, Notification } from '../validation/device';
@@ -145,30 +146,44 @@ export const checkDataAndCreateNotification = async (userId: string, deviceId: s
 
 // --- Device Data Functions ---
 
+// Cache to prevent attaching multiple listeners to the same device
+const listenerCache: Record<string, Unsubscribe> = {};
+
 export const onDeviceDataUpdate = (
   userId: string,
   deviceId: string,
   callback: (data: DeviceData | null) => void
-) => {
-  const dataRef = getDeviceDataRef(deviceId);
-  const initialQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
+): Unsubscribe => {
+  const cacheKey = `${userId}-${deviceId}`;
 
-  // 1. Get the last known data point for initial display
-  get(initialQuery).then((snapshot) => {
+  // If a listener already exists for this device, do nothing and return a no-op unsubscribe function
+  if (listenerCache[cacheKey]) {
+    // console.log(`Listener already attached for ${cacheKey}. Skipping.`);
+    return () => {};
+  }
+  
+  const dataRef = getDeviceDataRef(deviceId);
+  const dataQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
+  let listener: Unsubscribe | null = null;
+  let initialDataLoaded = false;
+  
+  // Get initial data for display
+  get(dataQuery).then(snapshot => {
     if (snapshot.exists()) {
       const data = snapshot.val();
       const key = Object.keys(data)[0];
-      callback(data[key]);
+      callback(data[key] as DeviceData);
     } else {
       callback(null);
     }
+    initialDataLoaded = true;
   });
 
-  // 2. Listen for NEW children added after the initial load.
-  // We use `onChildAdded` which is the most reliable way to listen for new items
-  // in a list-like structure in Firebase Realtime Database.
-  const newReadingsQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
-  const listener = onChildAdded(newReadingsQuery, (snapshot) => {
+  // Attach a listener for new children
+  listener = onChildAdded(dataQuery, (snapshot) => {
+    // Only process if the initial data has been loaded to avoid double processing on load
+    if (!initialDataLoaded) return;
+    
     const latestData = snapshot.val() as DeviceData;
     if (latestData) {
       // Update the UI with the very latest data.
@@ -176,17 +191,25 @@ export const onDeviceDataUpdate = (
       
       // IMPORTANT: Only check for notifications on RECENT data to avoid old alerts on load.
       // We check if the timestamp is within the last minute.
-      // Timestamp from DB is in seconds, convert to ms for comparison.
-      if (Date.now() - (latestData.timestamp * 1000) < 60000) { 
+      const isRecent = (Date.now() - (latestData.timestamp * 1000)) < 60000;
+      if (isRecent) {
          checkDataAndCreateNotification(userId, deviceId, latestData);
       }
     }
   });
 
-  // Return a function to clean up the listener when the component unmounts.
-  return () => {
-    off(newReadingsQuery, 'child_added', listener);
+  const unsubscribe = () => {
+    if (listener) {
+      off(dataQuery, 'child_added', listener);
+    }
+    delete listenerCache[cacheKey]; // Remove from cache on cleanup
+    // console.log(`Listener detached for ${cacheKey}.`);
   };
+
+  // Store the unsubscribe function in the cache
+  listenerCache[cacheKey] = unsubscribe;
+
+  return unsubscribe;
 };
 
 export const getDeviceDataHistory = (

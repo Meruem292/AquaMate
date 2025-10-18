@@ -13,7 +13,6 @@ import {
   limitToLast,
   push,
   get,
-  onChildAdded,
   off,
 } from 'firebase/database';
 import { app } from './config';
@@ -40,7 +39,6 @@ export const addDevice = async (userId: string, device: Device & { sendSms?: boo
     ph: (device.phMin + device.phMax) / 2,
     temperature: (device.tempMin + device.tempMax) / 2,
     ammonia: device.ammoniaMax / 2,
-    // Ensure timestamp is in SECONDS to match device data
     timestamp: Math.floor(Date.now() / 1000), 
   };
   const newDataRef = push(getDeviceDataRef(device.id));
@@ -106,8 +104,7 @@ const createNotification = async (userId: string, device: Device & { sendSms?: b
       value,
       threshold,
       range,
-      // Store timestamp in seconds
-      timestamp: Math.floor(Date.now() / 1000),
+      timestamp: Date.now(), // Store timestamp in milliseconds
       read: false,
     };
 
@@ -146,56 +143,37 @@ export const checkDataAndCreateNotification = async (userId: string, deviceId: s
 };
 
 // --- Device Data Functions ---
-const listenerCache = new Map<string, () => void>();
 
 export const onDeviceDataUpdate = (
   userId: string,
   deviceId: string,
-  callback: (data: DeviceData) => void
+  callback: (data: DeviceData | null) => void
 ) => {
-  const listenerKey = `data-${deviceId}`;
-
-  // Prevent duplicate listeners
-  if (listenerCache.has(listenerKey)) {
-    return listenerCache.get(listenerKey)!;
-  }
-
   const dataRef = getDeviceDataRef(deviceId);
-  const dataQuery = query(dataRef, orderByChild('timestamp'));
-  let lastKnownTimestamp = 0;
-  let initialDataLoaded = false;
+  const dataQuery = query(dataRef, orderByChild('timestamp'), limitToLast(1));
   
-  // 1. Get the latest data point for initial display
-  const initialQuery = query(dataQuery, limitToLast(1));
-  get(initialQuery).then((snapshot) => {
+  let lastNotifiedTimestamp = 0;
+
+  const unsubscribe = onValue(dataQuery, (snapshot) => {
     if (snapshot.exists()) {
       const data = snapshot.val();
       const key = Object.keys(data)[0];
       const latestData = data[key] as DeviceData;
-      lastKnownTimestamp = latestData.timestamp;
+      
       callback(latestData);
-    }
-    initialDataLoaded = true;
-  });
 
-  // 2. Listen for new children added after the initial load
-  const childAddedListener = onChildAdded(dataQuery, (snapshot) => {
-    if (!initialDataLoaded) return;
-    
-    const newData = snapshot.val() as DeviceData;
-    if (newData && newData.timestamp > lastKnownTimestamp) {
-        lastKnownTimestamp = newData.timestamp;
-        callback(newData);
-        checkDataAndCreateNotification(userId, deviceId, newData);
+      // Check if we should notify
+      if (latestData.timestamp > lastNotifiedTimestamp) {
+        lastNotifiedTimestamp = latestData.timestamp;
+        // Check for alerts, but only for recent data to avoid old alerts on load
+        if (Date.now() / 1000 - latestData.timestamp < 60) { // check data from the last 60 seconds
+             checkDataAndCreateNotification(userId, deviceId, latestData);
+        }
+      }
+    } else {
+      callback(null);
     }
   });
-
-  const unsubscribe = () => {
-    off(dataRef, 'child_added', childAddedListener);
-    listenerCache.delete(listenerKey);
-  };
-  
-  listenerCache.set(listenerKey, unsubscribe);
 
   return unsubscribe;
 };

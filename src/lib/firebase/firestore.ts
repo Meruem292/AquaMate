@@ -12,18 +12,17 @@ import {
   limitToLast,
   push,
   get,
+  onChildAdded,
 } from 'firebase/database';
 import { app } from './config';
 import { Device, DeviceData, Notification } from '../validation/device';
 
 const db = getDatabase(app);
 
-// Device References
+// --- References ---
 const getDevicesRef = (userId: string) => ref(db, `users/${userId}/devices`);
 const getDeviceRef = (userId: string, deviceId: string) => ref(db, `users/${userId}/devices/${deviceId}`);
 const getDeviceDataRef = (deviceId: string) => ref(db, `devices/${deviceId}`);
-
-// Notification References
 const getNotificationsRef = (userId: string) => ref(db, `users/${userId}/notifications`);
 
 // --- Device Functions ---
@@ -31,8 +30,15 @@ const getNotificationsRef = (userId: string) => ref(db, `users/${userId}/notific
 export const addDevice = async (userId: string, device: Device) => {
   const deviceRef = getDeviceRef(userId, device.id);
   await set(deviceRef, device);
-  // Create an initial data entry
-  await addDummyDeviceData(userId, device.id);
+  // Create an initial data entry to prevent errors on the dashboard
+  const initialData: DeviceData = {
+    ph: (device.phMin + device.phMax) / 2,
+    temperature: (device.tempMin + device.tempMax) / 2,
+    ammonia: device.ammoniaMax / 2,
+    timestamp: Date.now(), // Use milliseconds
+  };
+  const newDataRef = push(getDeviceDataRef(device.id));
+  await set(newDataRef, initialData);
 };
 
 export const getDevices = (
@@ -69,52 +75,25 @@ export const updateDevice = async (userId: string, device: Device) => {
 export const deleteDevice = async (userId: string, deviceId: string) => {
   await remove(getDeviceRef(userId, deviceId));
   await remove(getDeviceDataRef(deviceId));
-  // Optional: Also delete notifications for this device
-  const notificationsSnapshot = await get(query(getNotificationsRef(userId), orderByChild('deviceId'), ref(db, deviceId)));
-  if (notificationsSnapshot.exists()) {
+  const notificationsRef = getNotificationsRef(userId);
+  const snapshot = await get(query(notificationsRef, orderByChild('deviceId'), ref(db, deviceId)));
+  if (snapshot.exists()) {
     const updates: { [key: string]: null } = {};
-    notificationsSnapshot.forEach((child) => {
+    snapshot.forEach((child) => {
       updates[child.key!] = null;
     });
-    await update(getNotificationsRef(userId), updates);
+    await update(notificationsRef, updates);
   }
 };
 
 
-// --- Device Data Functions ---
-
-export const onDeviceDataUpdate = (
-  deviceId: string,
-  callback: (data: DeviceData) => void
-) => {
-  const latestDataQuery = query(getDeviceDataRef(deviceId), orderByChild('timestamp'), limitToLast(1));
-  const unsubscribe = onValue(latestDataQuery, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      const latestEntry = Object.values(data)[0] as DeviceData;
-      callback(latestEntry);
-    }
-  });
-  return unsubscribe;
-};
-
-export const getDeviceDataHistory = (
-  deviceId: string,
-  callback: (data: DeviceData[]) => void
-) => {
-  const historyQuery = query(getDeviceDataRef(deviceId), orderByChild('timestamp'));
-  const unsubscribe = onValue(historyQuery, (snapshot) => {
-    const data = snapshot.val();
-    const history = data ? Object.values(data) as DeviceData[] : [];
-    callback(history);
-  });
-  return unsubscribe;
-};
+// --- Notification and Data Check Functions ---
 
 const createNotification = async (userId: string, device: Device, parameter: 'pH' | 'Temperature' | 'Ammonia', value: number, threshold: string, range: string) => {
     const notificationsRef = getNotificationsRef(userId);
     const newNotificationRef = push(notificationsRef);
-    const notification: Omit<Notification, 'id'> = {
+    
+    const notificationPayload: Omit<Notification, 'id'> & { sms?: boolean } = {
       deviceId: device.id,
       deviceName: device.name,
       parameter,
@@ -124,44 +103,123 @@ const createNotification = async (userId: string, device: Device, parameter: 'pH
       timestamp: Math.floor(Date.now() / 1000),
       read: false,
     };
-    await set(newNotificationRef, notification);
+
+    // If device has SMS enabled, add the sms flag to the notification
+    if (device.sendSms) {
+        notificationPayload.sms = true;
+    }
+
+    await set(newNotificationRef, notificationPayload);
 };
 
 
-export const addDummyDeviceData = async (userId: string, deviceId: string) => {
+export const checkDataAndCreateNotification = async (userId: string, deviceId: string, data: DeviceData) => {
   const deviceSnapshot = await get(getDeviceRef(userId, deviceId));
   if (!deviceSnapshot.exists()) {
     console.error("Device settings not found for", deviceId);
     return;
   }
   const device: Device = deviceSnapshot.val();
-
-  const newDataRef = push(getDeviceDataRef(deviceId));
-  const timestamp = Math.floor(Date.now() / 1000);
-  const dummyData: DeviceData = {
-    ph: parseFloat((5.0 + Math.random() * 5.0).toFixed(1)), // pH between 5.0 and 10.0 for more alert variety
-    temperature: parseFloat((18.0 + Math.random() * 18.0).toFixed(1)), // Temp between 18.0 and 36.0
-    ammonia: parseFloat((Math.random() * 1.5).toFixed(2)), // Ammonia between 0.0 and 1.5
-    timestamp,
-  };
-  await set(newDataRef, dummyData);
-
-  // Check for alerts
-  if (dummyData.ph < device.phMin) {
-    await createNotification(userId, device, 'pH', dummyData.ph, 'Below Minimum', `${device.phMin} - ${device.phMax}`);
-  } else if (dummyData.ph > device.phMax) {
-    await createNotification(userId, device, 'pH', dummyData.ph, 'Above Maximum', `${device.phMin} - ${device.phMax}`);
+  
+  if (data.ph < device.phMin) {
+    await createNotification(userId, device, 'pH', data.ph, 'Below Minimum', `${device.phMin} - ${device.phMax}`);
+  } else if (data.ph > device.phMax) {
+    await createNotification(userId, device, 'pH', data.ph, 'Above Maximum', `${device.phMin} - ${device.phMax}`);
   }
 
-  if (dummyData.temperature < device.tempMin) {
-    await createNotification(userId, device, 'Temperature', dummyData.temperature, 'Below Minimum', `${device.tempMin}°C - ${device.tempMax}°C`);
-  } else if (dummyData.temperature > device.tempMax) {
-    await createNotification(userId, device, 'Temperature', dummyData.temperature, 'Above Maximum', `${device.tempMin}°C - ${device.tempMax}°C`);
+  if (data.temperature < device.tempMin) {
+    await createNotification(userId, device, 'Temperature', data.temperature, 'Below Minimum', `${device.tempMin}°C - ${device.tempMax}°C`);
+  } else if (data.temperature > device.tempMax) {
+    await createNotification(userId, device, 'Temperature', data.temperature, 'Above Maximum', `${device.tempMin}°C - ${device.tempMax}°C`);
   }
   
-  if (dummyData.ammonia > device.ammoniaMax) {
-      await createNotification(userId, device, 'Ammonia', dummyData.ammonia, 'Above Maximum', `< ${device.ammoniaMax} ppm`);
+  if (data.ammonia > device.ammoniaMax) {
+      await createNotification(userId, device, 'Ammonia', data.ammonia, 'Above Maximum', `< ${device.ammoniaMax} ppm`);
   }
+};
+
+// --- Device Data Functions ---
+const listenerCache = new Map<string, () => void>();
+
+export const onDeviceDataUpdate = (
+  userId: string,
+  deviceId: string,
+  callback: (data: DeviceData) => void
+) => {
+  
+  // If a listener already exists for this device, do nothing.
+  if (listenerCache.has(deviceId)) {
+    // Return the existing unsubscribe function
+     const latestDataQuery = query(getDeviceDataRef(deviceId), limitToLast(1));
+     onValue(latestDataQuery, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const latestKey = Object.keys(data)[0];
+          callback(data[latestKey]);
+        }
+     }, { onlyOnce: true });
+
+    return listenerCache.get(deviceId)!;
+  }
+
+  const dataRef = getDeviceDataRef(deviceId);
+  let initialDataLoaded = false;
+
+  const listener = onChildAdded(query(dataRef, limitToLast(20)), (snapshot) => {
+    const data = snapshot.val() as DeviceData;
+    if (!data) return;
+
+    if (!initialDataLoaded) {
+      return;
+    }
+    
+    // Update UI
+    callback(data);
+    
+    // Check for notifications
+    checkDataAndCreateNotification(userId, deviceId, data);
+  });
+  
+  // This part handles the initial load to get the very last data point for the UI
+  // without triggering a notification for it.
+  onValue(query(dataRef, limitToLast(1)), (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+          const latestKey = Object.keys(data)[0];
+          callback(data[latestKey]);
+      }
+      initialDataLoaded = true; // Mark initial data as loaded
+  }, { onlyOnce: true });
+
+
+  const unsubscribe = () => {
+    // Firebase off() function can be used here if needed, but onChildAdded doesn't have a direct off switch
+    // in the same way onValue does. Instead, we can rely on React's unmount to eventually clear memory.
+    // For our purpose, we just need to clear from cache.
+    listenerCache.delete(deviceId);
+  };
+  
+  listenerCache.set(deviceId, unsubscribe);
+
+  return unsubscribe;
+};
+
+
+export const getDeviceDataHistory = (
+  deviceId: string,
+  callback: (data: DeviceData[]) => void
+) => {
+  const historyQuery = query(getDeviceDataRef(deviceId), orderByChild('timestamp'));
+  const unsubscribe = onValue(historyQuery, (snapshot) => {
+    const data = snapshot.val();
+    const history = data ? Object.values(data).map(d => ({
+        ...d as DeviceData,
+        // Ensure timestamp is in seconds for consistency with old data if it exists
+        timestamp: (d as any).timestamp > 1000000000000 ? Math.floor((d as any).timestamp / 1000) : (d as any).timestamp,
+    })) : [];
+    callback(history);
+  });
+  return unsubscribe;
 };
 
 

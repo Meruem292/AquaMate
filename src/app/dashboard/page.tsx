@@ -10,14 +10,17 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 function DeviceCard({ device, index }: { device: Device; index: number }) {
+  const { user } = useUser();
   const [data, setData] = useState<DeviceData | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onDeviceDataUpdate(device.id, (latestData) => {
+    if (!user) return;
+    const unsubscribe = onDeviceDataUpdate(user.uid, device.id, (latestData) => {
       setData(latestData);
     });
     return () => unsubscribe();
-  }, [device.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [device.id, user]);
   
   const cardColors = [
     "bg-teal-900/20 hover:bg-teal-900/30 border-teal-700/40",

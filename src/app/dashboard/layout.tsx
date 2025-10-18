@@ -72,19 +72,21 @@ export default function DashboardLayout({
         </Sidebar>
 
         <SidebarInset className="flex flex-1 flex-col">
-          <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
-            {/* Mobile Header: Title + Actions */}
-            <div className="flex items-center gap-2 md:hidden">
-              <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} className="rounded-full" />
-              <h1 className="text-lg font-semibold">AquaMate</h1>
-            </div>
-            {/* Desktop Header: Title */}
-            <h1 className="text-xl font-semibold hidden md:block">Dashboard</h1>
+          <header className="flex h-14 shrink-0 items-center border-b bg-background lg:h-[60px]">
+            <div className="container mx-auto flex h-full w-full items-center justify-between">
+              {/* Mobile Header: Title + Actions */}
+              <div className="flex items-center gap-2 md:hidden">
+                <Image src="/Aquamate.png" alt="AquaMate Logo" width={24} height={24} className="rounded-full" />
+                <h1 className="text-lg font-semibold">AquaMate</h1>
+              </div>
+              {/* Desktop Header: Title */}
+              <h1 className="text-xl font-semibold hidden md:block">Dashboard</h1>
 
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <NotificationBell />
-              <UserNav />
+              <div className="flex items-center gap-4">
+                <ThemeToggle />
+                <NotificationBell />
+                <UserNav />
+              </div>
             </div>
           </header>
           {/* Add padding to the bottom to avoid content being hidden by the bottom nav */}

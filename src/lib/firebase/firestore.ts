@@ -27,9 +27,12 @@ const getNotificationsRef = (userId: string) => ref(db, `users/${userId}/notific
 
 // --- Device Functions ---
 
-export const addDevice = async (userId: string, device: Device) => {
+export const addDevice = async (userId: string, device: Device & { sendSms?: boolean }) => {
   const deviceRef = getDeviceRef(userId, device.id);
-  await set(deviceRef, device);
+  await set(deviceRef, {
+    ...device,
+    sendSms: device.sendSms || false, // Ensure sendSms is explicitly false if not provided
+  });
   // Create an initial data entry to prevent errors on the dashboard
   const initialData: DeviceData = {
     ph: (device.phMin + device.phMax) / 2,
@@ -67,7 +70,7 @@ export const getDevice = (
   return unsubscribe;
 };
 
-export const updateDevice = async (userId: string, device: Device) => {
+export const updateDevice = async (userId: string, device: Device & { sendSms?: boolean }) => {
   const deviceRef = getDeviceRef(userId, device.id);
   await update(deviceRef, device);
 };
@@ -89,7 +92,7 @@ export const deleteDevice = async (userId: string, deviceId: string) => {
 
 // --- Notification and Data Check Functions ---
 
-const createNotification = async (userId: string, device: Device, parameter: 'pH' | 'Temperature' | 'Ammonia', value: number, threshold: string, range: string) => {
+const createNotification = async (userId: string, device: Device & { sendSms?: boolean }, parameter: 'pH' | 'Temperature' | 'Ammonia', value: number, threshold: string, range: string) => {
     const notificationsRef = getNotificationsRef(userId);
     const newNotificationRef = push(notificationsRef);
     
@@ -119,7 +122,7 @@ export const checkDataAndCreateNotification = async (userId: string, deviceId: s
     console.error("Device settings not found for", deviceId);
     return;
   }
-  const device: Device = deviceSnapshot.val();
+  const device: Device & { sendSms?: boolean } = deviceSnapshot.val();
   
   if (data.ph < device.phMin) {
     await createNotification(userId, device, 'pH', data.ph, 'Below Minimum', `${device.phMin} - ${device.phMax}`);
@@ -146,62 +149,45 @@ export const onDeviceDataUpdate = (
   deviceId: string,
   callback: (data: DeviceData) => void
 ) => {
-  
-  // If a listener already exists for this device, do nothing.
+  // If a listener already exists for this device, return the existing unsubscribe function.
   if (listenerCache.has(deviceId)) {
-    // Return the existing unsubscribe function
-     const latestDataQuery = query(getDeviceDataRef(deviceId), limitToLast(1));
-     onValue(latestDataQuery, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const latestKey = Object.keys(data)[0];
-          callback(data[latestKey]);
-        }
-     }, { onlyOnce: true });
-
     return listenerCache.get(deviceId)!;
   }
 
   const dataRef = getDeviceDataRef(deviceId);
   let initialDataLoaded = false;
 
-  const listener = onChildAdded(query(dataRef, limitToLast(20)), (snapshot) => {
+  // 1. Get the last known value for initial UI display without triggering a notification.
+  const initialQuery = query(dataRef, limitToLast(1));
+  onValue(initialQuery, (snapshot) => {
+    if (!snapshot.exists()) {
+      initialDataLoaded = true; // No data, so we are "loaded"
+      return;
+    }
+    const data = snapshot.val();
+    const key = Object.keys(data)[0];
+    callback(data[key]); // Update UI with the most recent value
+    initialDataLoaded = true;
+  }, { onlyOnce: true });
+
+  // 2. Listen for NEW children added after the initial load.
+  const childAddedListener = onChildAdded(dataRef, (snapshot) => {
+    if (!initialDataLoaded) {
+      return; // Don't process items during initial load phase
+    }
     const data = snapshot.val() as DeviceData;
     if (!data) return;
 
-    if (!initialDataLoaded) {
-      return;
-    }
-    
-    // Update UI
+    // A new child has been added, update the UI and check for notifications.
     callback(data);
-    
-    // Check for notifications
     checkDataAndCreateNotification(userId, deviceId, data);
   });
   
-  // This part handles the initial load to get the very last data point for the UI
-  // without triggering a notification for it.
-  onValue(query(dataRef, limitToLast(1)), (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-          const latestKey = Object.keys(data)[0];
-          callback(data[latestKey]);
-      }
-      initialDataLoaded = true; // Mark initial data as loaded
-  }, { onlyOnce: true });
+  // The 'childAddedListener' from onChildAdded is actually the unsubscribe function itself.
+  // We store it in our cache.
+  listenerCache.set(deviceId, childAddedListener);
 
-
-  const unsubscribe = () => {
-    // Firebase off() function can be used here if needed, but onChildAdded doesn't have a direct off switch
-    // in the same way onValue does. Instead, we can rely on React's unmount to eventually clear memory.
-    // For our purpose, we just need to clear from cache.
-    listenerCache.delete(deviceId);
-  };
-  
-  listenerCache.set(deviceId, unsubscribe);
-
-  return unsubscribe;
+  return childAddedListener; // Return the unsubscribe function
 };
 
 
